@@ -1,0 +1,14 @@
+# Ignore environment variables
+.env
+venv
+__pycache__
+.venv
+watcher.db
+node_modules
+# Ignore Python bytecode
+*.pyc
+*.pyo
+*.pyd
+# Ignore logs
+*.log
+
