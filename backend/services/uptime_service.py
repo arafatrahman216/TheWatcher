@@ -70,7 +70,7 @@ class UptimeRobotAPI:
                 "monitors": "801132286",  # Specific monitor ID for FabricX AI
                 "logs": "1",
                 "response_times": "1",
-                "response_times_limit": "50", 
+                # "response_times_limit": "50", 
                 "response_times_average": "0",
                 "custom_uptime_ratios": "30-7-1"
             }
@@ -417,6 +417,34 @@ class UptimeService:
             raise
         finally:
             db.close()
+    
+    def get_ssl_certificate_info(self, domain: str = None) -> Dict[str, Any]:
+        """Fetch SSL certificate info from ssl-checker.io API"""
+        if not domain:
+            domain = self.website_url.replace('https://', '').replace('http://', '').strip('/')
+        try:
+            url = f"https://ssl-checker.io/api/v1/check/{domain}"
+            response = requests.get(url, timeout=15)
+            response.raise_for_status()
+            data = response.json()
+            data = data.get("result")
+            logger.info(f"SSL Checker API raw response: {data}")
+            cert_info = {
+                "valid_from": data.get("valid_from"),
+                "valid_till": data.get("valid_till"),
+                "days_left": data.get("days_left"),
+                "cert_exp": data.get("cert_exp")
+            }
+            return cert_info
+        except Exception as e:
+            logger.error(f"Error fetching SSL certificate info: {e}")
+            return {
+                "valid_from": None,
+                "valid_till": None,
+                "days_left": None,
+                "cert_exp": None,
+                "error": str(e)
+            }
 
 # Initialize the service
 uptime_service = UptimeService()

@@ -1,3 +1,27 @@
+import os
+import requests
+from apscheduler.schedulers.background import BackgroundScheduler
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+
+def send_discord_hi():
+    if DISCORD_WEBHOOK_URL:
+        try:
+            requests.post(DISCORD_WEBHOOK_URL, json={"content": "hi"})
+        except Exception as e:
+            print(f"Failed to send Discord message: {e}")
+    else:
+        print("DISCORD_WEBHOOK_URL not set in .env")
+
+def start_scheduler():
+    scheduler = BackgroundScheduler()
+    # Schedule job every day at 4:35 PM
+    scheduler.add_job(send_discord_hi, 'cron', hour=16, minute=35)
+    scheduler.start()
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from services.uptime_service import uptime_service

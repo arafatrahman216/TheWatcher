@@ -29,7 +29,11 @@ import {
   CheckCircle,
   Error,
   Speed,
-  Timeline as TimelineIcon
+  Timeline as TimelineIcon,
+  Verified,
+  CalendarToday,
+  EventBusy,
+  WarningAmber
 } from '@mui/icons-material';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -605,44 +609,101 @@ const WebsiteInfo = ({ website }) => {
   );
 };
 
+const SSLCertCard = ({ cert }) => {
+  const expired = cert?.cert_exp === true;
+  return (
+    <Card sx={{ height: '100%', background: expired ? 'linear-gradient(135deg, #f5576c 0%, #f093fb 100%)' : 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', boxShadow: expired ? '0 0 20px 0 #f093fb' : '0 0 20px 0 #43e97b' }}>
+      <CardHeader 
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Verified sx={{ color: expired ? '#f5576c' : '#059669', fontSize: 28 }} />
+            <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+              SSL Certificate
+            </Typography>
+            {expired && (
+              <Chip label="Expired" color="error" sx={{ ml: 2, fontWeight: 700 }} />
+            )}
+          </Box>
+        }
+        sx={{ pb: 1 }}
+      />
+      <CardContent>
+        {cert ? (
+          <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CalendarToday sx={{ color: 'white', fontSize: 20 }} />
+              <Typography variant="body1" sx={{ color: 'white', fontWeight: 500 }}>
+                <b>Valid From:</b> {cert.valid_from ? new Date(cert.valid_from).toLocaleDateString() : 'N/A'}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <EventBusy sx={{ color: 'white', fontSize: 20 }} />
+              <Typography variant="body1" sx={{ color: 'white', fontWeight: 500 }}>
+                <b>Valid Till:</b> {cert.valid_till ? new Date(cert.valid_till).toLocaleDateString() : 'N/A'}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <WarningAmber sx={{ color: expired ? '#f5576c' : '#059669', fontSize: 20 }} />
+              <Typography variant="body1" sx={{ color: 'white', fontWeight: 500 }}>
+                <b>Days Left:</b> {cert.days_left ?? 'N/A'}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip label={expired ? 'Expired' : 'Active'} color={expired ? 'error' : 'success'} sx={{ fontWeight: 700, fontSize: '1rem' }} />
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            <Typography variant="body2" sx={{ color: 'white' }}>
+              Loading SSL certificate info...
+            </Typography>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 function Dashboard() {
   const [website, setWebsite] = useState(null);
   const [stats, setStats] = useState(null);
   const [checks, setChecks] = useState([]);
+  const [sslCert, setSSLCert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Only update state if data is different
+  const updateStateIfChanged = (setter, newData, oldData) => {
+    if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
+      setter(newData);
+    }
+  };
+
   const fetchData = async () => {
     try {
-      setLoading(true);
       setError(null);
-
-      // Fetch website info
-      const websiteResponse = await axios.get(`${API_BASE_URL}/website`);
-      setWebsite(websiteResponse.data);
-
-      // Fetch stats
-      const statsResponse = await axios.get(`${API_BASE_URL}/stats`);
-      setStats(statsResponse.data);
-
-      // Fetch recent checks
-      const checksResponse = await axios.get(`${API_BASE_URL}/checks`);
-      setChecks(checksResponse.data);
-
+      // Fetch all data in parallel
+      const [websiteResponse, statsResponse, checksResponse, sslCertResponse] = await Promise.all([
+        axios.get(`${API_BASE_URL}/website`),
+        axios.get(`${API_BASE_URL}/stats`),
+        axios.get(`${API_BASE_URL}/checks`),
+        axios.get(`${API_BASE_URL}/ssl-cert`)
+      ]);
+      updateStateIfChanged(setWebsite, websiteResponse.data, website);
+      updateStateIfChanged(setStats, statsResponse.data, stats);
+      updateStateIfChanged(setChecks, checksResponse.data, checks);
+      updateStateIfChanged(setSSLCert, sslCertResponse.data, sslCert);
+      setLoading(false);
     } catch (err) {
       setError(err.message || 'Failed to fetch data');
-      console.error('Error fetching data:', err);
-    } finally {
       setLoading(false);
+      console.error('Error fetching data:', err);
     }
   };
 
   useEffect(() => {
     fetchData();
-    
-    // Set up auto-refresh every 30 seconds
     const interval = setInterval(fetchData, 30000);
-    
     return () => clearInterval(interval);
   }, []);
 
@@ -692,7 +753,6 @@ function Dashboard() {
           >
             Real-time monitoring dashboard for website uptime, performance, and reliability analytics
           </Typography>
-          
           {error && (
             <Alert 
               severity="error" 
@@ -721,24 +781,22 @@ function Dashboard() {
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
         }}>
           <Grid container spacing={4}>
-            {/* Website Info */}
-            <Grid item xs={12} lg={4}>
+            {/* First row: 3 wide stats cards, each fills 1/3 of the row on medium screens and up */}
+            <Grid item xs={12} md={4} lg={4}>
               <WebsiteInfo website={website} />
             </Grid>
-
-            {/* Uptime Stats */}
-            <Grid item xs={12} lg={8}>
+            <Grid item xs={12} md={4} lg={4}>
+              <SSLCertCard cert={sslCert} />
+            </Grid>
+            <Grid item xs={12} md={4} lg ={4}>
               <UptimeCard stats={stats} />
             </Grid>
-
-            {/* Response Time Chart */}
-            <Grid item xs={12} lg={7}>
-              <ResponseTimeChart checks={checks} />
-            </Grid>
-
-            {/* Recent Checks Timeline */}
-            <Grid item xs={12} lg={5}>
+            {/* Second row: Recent Activity and Response Time Chart side by side, each fills 1/2 of the row */}
+            <Grid item xs={12} md={6} lg={6}>
               <RecentChecksTimeline checks={checks} />
+            </Grid>
+            <Grid item xs={12} md={6} lg={6}>
+              <ResponseTimeChart checks={checks} />
             </Grid>
           </Grid>
         </Box>
