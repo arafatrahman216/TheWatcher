@@ -1,0 +1,36 @@
+.
+├── backend
+│   ├── database.py
+│   ├── main.py
+│   ├── requirements.txt
+│   ├── routes
+│   │   ├── __init__.py
+│   │   ├── uptime.py
+│   │   └── uptime_routes
+│   ├── run_backend.sh
+│   ├── scheduler.py
+│   ├── schemas.py
+│   ├── services
+│   │   ├── __init__.py
+│   │   ├── uptime_service_pkg
+│   │   └── uptime_service.py
+│   ├── setup.sh
+│   └── watcher.db
+├── check.txt
+├── frontend
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── public
+│   │   └── index.html
+│   └── src
+│       ├── api.js
+│       ├── App.jsx
+│       ├── components
+│       ├── index.js
+│       └── theme.js
+├── project_structure.txt
+├── README.md
+├── run_backend.sh
+└── setup.sh
+
+10 directories, 24 files

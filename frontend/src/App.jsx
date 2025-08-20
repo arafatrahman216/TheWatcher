@@ -9,6 +9,7 @@ import ResponseTimeChart from './components/ResponseTimeChart';
 import RecentChecksTimeline from './components/RecentChecksTimeline';
 import WebsiteInfo from './components/WebsiteInfo';
 import SSLCertCard from './components/SSLCertCard';
+import BrokenLinkScanner from './components/BrokenLinkScanner';
 import CircularProgress from '@mui/material/CircularProgress';
 
 function Dashboard() {
@@ -79,7 +80,7 @@ function Dashboard() {
               margin: '0 auto 24px auto',
             }}
           >
-            Real-time monitoring dashboard for website uptime, performance, and reliability analytics
+            Real-time monitoring dashboard for website uptime, performance, reliability — plus broken link scans
           </Typography>
           {error && (
             <Alert
@@ -108,7 +109,7 @@ function Dashboard() {
           }}
         >
           <Grid container spacing={4}>
-            {/* Top row: 3 cards */}
+            {/* Top row (3) */}
             <Grid item xs={12} md={4} lg={4}>
               <WebsiteInfo website={website} />
             </Grid>
@@ -119,16 +120,17 @@ function Dashboard() {
               <UptimeCard stats={stats} />
             </Grid>
 
-            {/* Bottom row: 2 cards centered */}
+            {/* Middle row (2) */}
+            <Grid item xs={12} md={6} lg={6}>
+              <RecentChecksTimeline checks={checks} />
+            </Grid>
+            <Grid item xs={12} md={6} lg={6}>
+              <ResponseTimeChart checks={checks} />
+            </Grid>
+
+            {/* Third row: Broken Link Scanner (full width) */}
             <Grid item xs={12}>
-              <Grid container spacing={4} justifyContent="center">
-                <Grid item xs={12} md={5} lg={5}>
-                  <RecentChecksTimeline checks={checks} />
-                </Grid>
-                <Grid item xs={12} md={5} lg={5}>
-                  <ResponseTimeChart checks={checks} />
-                </Grid>
-              </Grid>
+              <BrokenLinkScanner defaultRoot={website?.url || ""} />
             </Grid>
           </Grid>
         </Box>
