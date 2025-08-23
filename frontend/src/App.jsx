@@ -10,6 +10,7 @@ import RecentChecksTimeline from './components/RecentChecksTimeline';
 import WebsiteInfo from './components/WebsiteInfo';
 import SSLCertCard from './components/SSLCertCard';
 import BrokenLinkScanner from './components/BrokenLinkScanner';
+import PerformanceCard from './components/PerformanceCard';
 import CircularProgress from '@mui/material/CircularProgress';
 
 function Dashboard() {
@@ -128,7 +129,15 @@ function Dashboard() {
               <ResponseTimeChart checks={checks} />
             </Grid>
 
-            {/* Third row: Broken Link Scanner (full width) */}
+            {/* Fourth row: Performance metrics */}
+            <Grid item xs={12} md={6} lg={6}>
+              <PerformanceCard url={website?.url} strategy="mobile" />
+            </Grid>
+            <Grid item xs={12} md={6} lg={6}>
+              <PerformanceCard url={website?.url} strategy="desktop" />
+            </Grid>
+
+            {/* Fifth row: Broken Link Scanner (full width) */}
             <Grid item xs={12}>
               <BrokenLinkScanner defaultRoot={website?.url || ""} />
             </Grid>
