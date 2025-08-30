@@ -221,7 +221,7 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                 The Watcher
               </Typography>
               <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.7)', mt: 1 }}>
-                Website Monitoring Dashboard
+                Your Website Monitoring Solution 
               </Typography>
             </Box>
             <Button
@@ -364,6 +364,9 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600, borderBottom: '1px solid rgba(0, 255, 127, 0.1)' }}>
+                      Monitor ID
+                    </TableCell>
+                    <TableCell sx={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600, borderBottom: '1px solid rgba(0, 255, 127, 0.1)' }}>
                       Website
                     </TableCell>
                     <TableCell sx={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600, borderBottom: '1px solid rgba(0, 255, 127, 0.1)' }}>
@@ -373,13 +376,10 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                       Status
                     </TableCell>
                     <TableCell sx={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600, borderBottom: '1px solid rgba(0, 255, 127, 0.1)' }}>
-                      Active
-                    </TableCell>
-                    <TableCell sx={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600, borderBottom: '1px solid rgba(0, 255, 127, 0.1)' }}>
                       Created
                     </TableCell>
                     <TableCell sx={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600, borderBottom: '1px solid rgba(0, 255, 127, 0.1)' }}>
-                      Last Check
+                      Interval
                     </TableCell>
                     <TableCell sx={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600, borderBottom: '1px solid rgba(0, 255, 127, 0.1)' }}>
                       Actions
@@ -400,13 +400,16 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                         }}
                       >
                         <TableCell sx={{ color: '#ffffff', fontWeight: 500 }}>
+                          {monitor.id}  
+                        </TableCell>
+                        <TableCell sx={{ color: '#ffffff', fontWeight: 500 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Language sx={{ color: '#00ff7f', fontSize: 20 }} />
-                            {monitor.sitename}
+                            {monitor.friendlyName}
                           </Box>
                         </TableCell>
                         <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                          {monitor.site_url}
+                          {monitor.url}
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -420,18 +423,11 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                             }}
                           />
                         </TableCell>
-                        <TableCell>
-                          {monitor.is_active ? (
-                            <CheckCircle sx={{ color: '#00ff7f', fontSize: 20 }} />
-                          ) : (
-                            <Cancel sx={{ color: '#ff4444', fontSize: 20 }} />
-                          )}
+                        <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                          {formatDate(monitor.createDateTime)}
                         </TableCell>
                         <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                          {formatDate(monitor.monitor_created)}
-                        </TableCell>
-                        <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                          {formatLastChecked(monitor.last_checked)}
+                          {formatLastChecked(monitor.interval)}
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', gap: 1 }}>
