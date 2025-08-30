@@ -2,7 +2,7 @@ import logging
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database.database import get_db, Website
+from database.AuthDB import get_db, Website
 from database.schemas import WebsiteResponse
 from services.uptime_service import uptime_service
 

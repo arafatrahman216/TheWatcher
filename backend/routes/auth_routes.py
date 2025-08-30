@@ -6,7 +6,7 @@ Clean and reusable API endpoints for user authentication
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from database.database import signup_user, login_user, verify_email_otp
+from backend.database.AuthDB import signup_user, login_user, verify_email_otp
 import logging
 
 logger = logging.getLogger(__name__)

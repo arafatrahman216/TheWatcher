@@ -208,12 +208,12 @@ class UptimeRobotAPI:
             logger.error(f"Error fetching monitor {monitor_id}: {e}")
             return {}
 
-    def _create_new_monitor(self, user_id: str, monitor : Dict[str, Any] ) -> Dict[str, Any] :
-        try :
+    def _create_new_monitor(self, user_id: str, monitor: Dict[str, Any]) -> Dict[str, Any]:
+        try:
             url = f"{self.updates_url}/monitors"
             body = {
-                "friendlyName": monitor.name,
-                "url": monitor.url,
+                "friendlyName": monitor.sitename,
+                "url": monitor.site_url,
                 "type": "HTTP",
                 "port": 0,
                 "keywordType": "ALERT_EXISTS",

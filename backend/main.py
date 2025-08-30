@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from routes.uptime import router as uptime_router
 from routes.auth_routes.auth_routes import auth_router
+from routes.monitor_routes.monitor_route import router as monitor_router
 from services.uptime_service import uptime_service
 import logging
 import uvicorn
@@ -36,6 +37,8 @@ app.add_middleware(
 # Include routers
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(uptime_router, prefix="/api/v1", tags=["uptime"])
+app.include_router(monitor_router, prefix="/api/v1", tags=["monitors"])
+
 
 @app.on_event("startup")
 async def startup_event():

@@ -4,7 +4,7 @@ from typing import Dict, Any, List
 import logging
 
 from sqlalchemy.orm import Session
-from database.database import SessionLocal, Website, UptimeCheck
+from database.AuthDB import SessionLocal, Website, UptimeCheck
 
 from .api_client import UptimeRobotAPI
 

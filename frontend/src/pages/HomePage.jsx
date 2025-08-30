@@ -427,7 +427,7 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                           {formatDate(monitor.createDateTime)}
                         </TableCell>
                         <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                          {formatLastChecked(monitor.interval)}
+                          {(monitor.interval)}
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', gap: 1 }}>

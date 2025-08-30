@@ -7,7 +7,7 @@ import pytz
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database.database import get_db, Website
+from database.AuthDB import get_db, Website
 from services.uptime_service import uptime_service
 from .stats_route import get_uptime_stats  # reuse the stats function
 

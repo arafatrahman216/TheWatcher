@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database.database import get_db, Website, UptimeCheck
+from database.AuthDB import get_db, Website, UptimeCheck
 from database.schemas import UptimeStatsResponse, UptimeCheckResponse
 from services.uptime_service import uptime_service
 from services.monitor_service_pkg.api_client import UptimeRobotAPI

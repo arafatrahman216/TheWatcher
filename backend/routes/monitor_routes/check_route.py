@@ -4,7 +4,8 @@ from datetime import datetime
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database.database import get_db, UptimeCheck
+from database.MonitorDB import _create_new_monitor, MonitorCreate
+from database.AuthDB import get_db, UptimeCheck
 from database.schemas import UptimeCheckResponse
 from services.uptime_service import uptime_service
 
@@ -162,3 +163,14 @@ def register(router):
         except Exception as e:
             logger.error(f"Error getting uptime checks: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
+
+    @router.post("/create-monitor")
+    async def create_monitor(monitor: MonitorCreate, db: Session = Depends(get_db)):
+        """Create a new monitor"""
+        result = _create_new_monitor(monitor)
+        if result["success"]:
+            return {"message": "Monitor created successfully", "monitor_id": result["monitor_id"]}
+        else:
+            raise HTTPException(status_code=400, detail=result["message"])
+        
+
