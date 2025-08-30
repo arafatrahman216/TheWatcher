@@ -40,7 +40,7 @@ async def create_monitor(request: CreateMonitorRequest, db: Session = Depends(ge
             interval=request.monitor.interval
         )
 
-        data = UptimeRobotAPI._create_new_monitor(user_id=request.user_id, monitor=monitor)
+        data = UptimeRobotAPI()._create_new_monitor(user_id=request.user_id, monitor=monitor)
         monitor.monitorid = data.get("id", 0)  # Update with ID from UptimeRobot
         
         result = _create_new_monitor(monitor)

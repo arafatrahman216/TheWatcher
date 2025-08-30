@@ -211,15 +211,16 @@ class UptimeRobotAPI:
     def _create_new_monitor(self, user_id: str, monitor: Dict[str, Any]) -> Dict[str, Any]:
         try:
             url = f"{self.updates_url}/monitors"
+            print(monitor.sitename)
             body = {
-                "friendlyName": monitor.sitename,
-                "url": monitor.site_url,
+                "friendlyName": "My monitor",
+                "url": "http://test.com",
                 "type": "HTTP",
                 "port": 0,
                 "keywordType": "ALERT_EXISTS",
                 "keywordCaseType": 0,
                 "keywordValue": "AAAAAA",
-                "interval": monitor.interval,
+                "interval": 60,
                 "timeout": 30,
                 "gracePeriod": 300,
                 "httpUsername": "",
@@ -231,7 +232,7 @@ class UptimeRobotAPI:
                 "assignedAlertContacts": [
                     {
                     "alertContactId": 12345,
-                    "threshold": 5,
+                    "threshold": 5, 
                     "recurrence": 30
                     }
                 ],
@@ -257,7 +258,7 @@ class UptimeRobotAPI:
                 "config": {
                     "dnsRecords": {
                     "CNAME": [
-                        monitor.name
+                        "example.com"
                     ],
                     "MX": [
                         "1 aspmx.l.google.com.",
@@ -275,7 +276,7 @@ class UptimeRobotAPI:
                     ]
                     }
                 }
-            }
+                }
             response = requests.post(url, headers=self.headers,data=body)
             response.raise_for_status()
             data = response.json()
