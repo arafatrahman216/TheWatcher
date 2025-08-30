@@ -10,7 +10,7 @@ import {
 import {
   LinkOff, Link as LinkIcon, QueryStats, Timer, ExpandMore, ExpandLess, TravelExplore
 } from "@mui/icons-material";
-import { API_BASE_URL } from "../api";
+import { API_BASE_URL } from "../../api";
 
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 

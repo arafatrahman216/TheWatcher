@@ -2,8 +2,8 @@ import logging
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import get_db, Website
-from schemas import WebsiteResponse
+from database.database import get_db, Website
+from database.schemas import WebsiteResponse
 from services.uptime_service import uptime_service
 
 logger = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from database import get_db
+from database.database import get_db
 from services.uptime_service import uptime_service  # reuse configured site url
 from services.linkscan_pkg.scanner import LinkScannerService
 

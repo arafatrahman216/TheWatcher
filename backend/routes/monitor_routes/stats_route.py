@@ -4,9 +4,10 @@ from datetime import datetime
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import get_db, Website, UptimeCheck
-from schemas import UptimeStatsResponse, UptimeCheckResponse
+from database.database import get_db, Website, UptimeCheck
+from database.schemas import UptimeStatsResponse, UptimeCheckResponse
 from services.uptime_service import uptime_service
+from services.monitor_service_pkg.api_client import UptimeRobotAPI
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,11 @@ def register(router):
     async def get_uptime_stats_endpoint(db: Session = Depends(get_db)):
         return await get_uptime_stats(db)
 
+    @router.get("/monitors")
+    async def get_uptime_monitors_endpoint(db: Session = Depends(get_db)):
+        monitors = UptimeRobotAPI()._get_all_monitors()
+        print(monitors)
+        return monitors
 
 async def get_uptime_stats(db: Session) -> UptimeStatsResponse:
     """Get uptime statistics for the monitored website"""

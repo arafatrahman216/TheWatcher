@@ -21,7 +21,12 @@ class UptimeRobotAPI:
     def __init__(self):
         self.api_key = os.getenv("UPTIMEROBOT_API_KEY")
         self.base_url = "https://api.uptimerobot.com/v2"
-        
+        self.updates_url = "https://api.uptimerobot.com/v3"
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json"
+        }
+
         logger.info(f"Initializing UptimeRobot API. API Key available: {bool(self.api_key)}")
         if not self.api_key:
             logger.warning("UptimeRobot API key not found. Will use direct HTTP checks as fallback.")
@@ -60,7 +65,7 @@ class UptimeRobotAPI:
             data = {
                 "api_key": self.api_key,
                 "format": "json",
-                "monitors": "801132286",  # Specific monitor ID for FabricX AI
+                # "monitors": "801132286",  # Specific monitor ID for FabricX AI
                 "logs": "1",
                 "response_times": "1",
                 # "response_times_limit": "50",
@@ -159,3 +164,47 @@ class UptimeRobotAPI:
                 "error_message": str(e),
                 "timestamp": datetime.utcnow().isoformat()
             }
+
+    def _get_all_monitors(self) -> List[Dict[str, Any]]:
+        """Get all monitors from UptimeRobot API"""
+        try:
+            url = f"{self.updates_url}/monitors"
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            data = response.json()
+            monitors_arr = data.get("data", [])
+            # Select only specific fields from each monitor
+            monitors = [
+                {
+                    "id": monitor.get("id"),
+                    "interval": monitor.get("interval"),
+                    "friendlyName": monitor.get("friendlyName"),
+                    "url": monitor.get("url"),
+                    "status": monitor.get("status"),
+                    "createDateTime": monitor.get("createDateTime")
+                }
+                for monitor in monitors_arr
+            ]
+            return monitors
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching monitors: {e}")
+            return []
+
+    def _get_monitor_by_id(self, monitor_id: str) -> Dict[str, Any]:
+        """Get a specific monitor by ID from UptimeRobot API"""
+        try:
+            url = f"{self.updates_url}/monitors/{monitor_id}"
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            data = response.json()
+            return {
+                "id": data.get("id"),
+                "friendlyName": data.get("friendlyName"),
+                "url": data.get("url"),
+                "status": data.get("status"),
+                "createDateTime": data.get("createDateTime")
+            }
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching monitor {monitor_id}: {e}")
+            return {}
+

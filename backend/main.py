@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from routes.uptime import router as uptime_router
+from routes.auth_routes.auth_routes import auth_router
 from services.uptime_service import uptime_service
 import logging
 import uvicorn
@@ -15,20 +16,25 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Website Maintenance Agent",
-    description="A comprehensive website monitoring and maintenance system",
+    description="A comprehensive website monitoring and maintenance system with authentication",
     version="1.0.0"
 )
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React frontend
+    allow_origins=[
+        "http://localhost:3000",  # React frontend
+        "http://localhost:3001",  # Alternative port
+        "http://127.0.0.1:3000"   # Alternative localhost
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
+app.include_router(auth_router, prefix="/api/v1")
 app.include_router(uptime_router, prefix="/api/v1", tags=["uptime"])
 
 @app.on_event("startup")
