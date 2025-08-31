@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 import logging
 
+from sqlalchemy import false
+
 # Try to import dotenv, fall back to os.environ if not available
 try:
     from dotenv import load_dotenv
@@ -210,93 +212,71 @@ class UptimeRobotAPI:
 
     def _create_new_monitor(self, user_id: str, monitor: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            url = f"{self.updates_url}/monitors"
-            print(monitor.sitename)
-            body = {
-                "friendlyName": "My monitor",
-                "url": "http://test.com",
-                "type": "HTTP",
-                "port": 0,
-                "keywordType": "ALERT_EXISTS",
-                "keywordCaseType": 0,
-                "keywordValue": "AAAAAA",
-                "interval": 60,
-                "timeout": 30,
-                "gracePeriod": 300,
-                "httpUsername": "",
-                "httpPassword": "",
-                "httpMethodType": "HEAD",
-                "authType": "NONE",
-                "postValueData": {},
-                "postValueType": "KEY_VALUE",
-                "assignedAlertContacts": [
-                    {
-                    "alertContactId": 12345,
-                    "threshold": 5, 
-                    "recurrence": 30
-                    }
-                ],
-                "customHttpHeaders": {},
-                "successHttpResponseCodes": [
-                    "2xx",
-                    "3xx"
-                ],
-                "checkSSLErrors": "false",
-                "tagNames": [
-                    "tag1",
-                    "tag2"
-                ],
-                "maintenanceWindowsIds": [
-                    123,
-                    234
-                ],
-                "domainExpirationReminder": "false",
-                "sslExpirationReminder": "false",
-                "followRedirections": "false",
-                "responseTimeThreshold": 0,
-                "regionalData": "as",
-                "config": {
-                    "dnsRecords": {
-                    "CNAME": [
-                        "example.com"
-                    ],
-                    "MX": [
-                        "1 aspmx.l.google.com.",
-                        "5 alt1.aspmx.l.google.com."
-                    ],
-                    "NS": [
-                        "ns-cloud-a1.googledomains.com.",
-                        "ns-cloud-a2.googledomains.com."
-                    ],
-                    "A": [
-                        "192.168.1.1"
-                    ],
-                    "PTR": [
-                        "example.com"
-                    ]
-                    }
-                }
-                }
-            response = requests.post(url, headers=self.headers,data=body)
+            # Use UptimeRobot API v2 which is more stable
+            url = f"{self.base_url}/newMonitor"
+
+            siteurl = monitor["site_url"]
+            sitename = monitor["sitename"]
+            interval = monitor["interval"]
+
+            # Use form data format for v2 API
+            data = {
+                "api_key": self.api_key,
+                "format": "json",
+                "type": "1",  # HTTP(s)
+                "url": siteurl,
+                "friendly_name": sitename,
+                "interval": str(interval)
+            }
+            
+            print(f"Creating monitor with data: {data}")
+            response = requests.post(url, data=data)
+            print(f"Response status: {response.status_code}")
+            print(f"Response text: {response.text}")
+            
             response.raise_for_status()
-            data = response.json()
-            print(data)
-            return data
+            result = response.json()
+            print(f"API Response: {result}")
+            
+            if result.get("stat") == "ok":
+                return {
+                    "success": True,
+                    "id": result.get("monitor", {}).get("id"),
+                    "monitor_id": result.get("monitor", {}).get("id"),
+                    "message": "Monitor created successfully"
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": result.get("error", {}).get("message", "Failed to create monitor")
+                }
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error creating monitor {monitor}: {e}")
-            return {}
+            logger.error(f"\nError creating monitor {monitor}: {e}")
+            # Return mock success for development
+            return {
+                "success": False,
+                "id": 0,
+                "monitor_id": 0,
+                "message": "Monitor created failed"
+            }
 
 
-    def _delete_monitor(self, user_id : str, monitor_id: str):
+    def _delete_monitor(self, monitor_id: str):
         try :
             url = f"{self.updates_url}/monitors/{monitor_id}"
             response =  requests.delete(url, headers=self.headers)
             response.raise_for_status()
-            data = response.json()
-            print(data)
-            return data
+            
+            # Check if response has content before parsing JSON
+            if response.text.strip():
+                data = response.json()
+                print(data)
+                return data
+            else:
+                # Empty response indicates successful deletion
+                return {"success": True, "message": "Monitor deleted successfully"}
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error deleting monitor {monitor_id}: {e}")
+            logger.error(f"\nError deleting monitor {monitor_id}: {e}")
             return {}

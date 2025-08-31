@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
@@ -8,7 +9,25 @@ import {
   Tab,
 } from '@mui/material';
 
-const Navbar = ({ user, currentView, onViewChange, onLogout }) => {
+const Navbar = ({ user, onLogout }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine current tab based on location
+  const getCurrentTab = () => {
+    if (location.pathname === '/') return 'home';
+    if (location.pathname.startsWith('/dashboard')) return 'dashboard';
+    return false;
+  };
+
+  const handleTabChange = (event, newValue) => {
+    if (newValue === 'home') {
+      navigate('/');
+    } else if (newValue === 'dashboard') {
+      navigate('/dashboard');
+    }
+  };
+
   return (
     <AppBar position="static" sx={{ backgroundColor: 'rgba(0, 0, 0, 0.1)', backdropFilter: 'blur(10px)', boxShadow: 'none' }}>
       <Toolbar>
@@ -16,8 +35,8 @@ const Navbar = ({ user, currentView, onViewChange, onLogout }) => {
           🔍 The Watcher
         </Typography>
         <Tabs
-          value={currentView}
-          onChange={(e, newValue) => onViewChange(newValue)}
+          value={getCurrentTab()}
+          onChange={handleTabChange}
           sx={{
             mr: 3,
             '& .MuiTab-root': {

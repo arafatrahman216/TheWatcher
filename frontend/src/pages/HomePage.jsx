@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -20,6 +21,7 @@ import {
   Button,
   Alert,
   TablePagination,
+  Fab,
 } from '@mui/material';
 import {
   Language,
@@ -34,15 +36,19 @@ import {
   Security,
   Speed,
 } from '@mui/icons-material';
-import { API_BASE_URL } from '../api';
+import { API_BASE_URL, apiHelpers } from '../api';
 import axios from 'axios';
+import DeleteMonitorModal from '../components/HomeComponent/DeleteMonitorModal';
 
-const HomePage = ({ user, onLogout, onNavigate }) => {
+const HomePage = ({ user }) => {
+  const navigate = useNavigate();
   const [monitors, setMonitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedMonitor, setSelectedMonitor] = useState(null);
 
   useEffect(() => {
     fetchMonitors();
@@ -111,9 +117,9 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'online': return '#00ff7f';
-      case 'offline': return '#ff4444';
-      case 'warning': return '#ffaa00';
+      case 'UP': return '#00ff7f';
+      case 'DOWN': return '#ff4444';
+      case 'PAUSED': return '#ffaa00';
       default: return '#666666';
     }
   };
@@ -126,21 +132,60 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
     });
   };
 
-  const formatLastChecked = (dateString) => {
+    const formatLastChecked = (dateString) => {
+    if (!dateString) return 'Never';
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
     
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+    return `${Math.floor(diffMins / 1440)}d ago`;
+  };
+
+  const handleDeleteClick = (monitor) => {
+    setSelectedMonitor(monitor);
+    setDeleteModalOpen(true);
+    console.log('Delete clicked for monitor:', monitor);
+  };
+
+  const handleDeleteConfirm = async (monitorId, userId) => {
+    try {
+
+      console.log('** Deleting monitor with ID:', monitorId, 'for user ID:', userId);  
+      const response = await fetch(`${API_BASE_URL}/monitors/delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          monitor_id: monitorId,
+        }),
+      });
+
+      if (response.ok) {
+        // Remove the deleted monitor from the list
+        setMonitors(monitors.filter(m => m.monitorid !== monitorId));
+        setError(null);
+      } else {
+        const data = await response.json();
+        const errorMessage = apiHelpers.formatError(data.detail) || 'Failed to delete monitor';
+        setError(errorMessage);
+      }
+    } catch (err) {
+      console.error('Delete monitor error:', err);
+      const errorMessage = apiHelpers.formatError(err) || 'Network error. Please try again.';
+      setError(errorMessage);
+    }
   };
 
   const userStats = {
     totalMonitors: monitors.length,
-    activeMonitors: monitors.filter(m => m.is_active).length,
-    onlineMonitors: monitors.filter(m => m.status === 'online').length,
+    activeMonitors: monitors.filter(m => m.status === 'UP').length,
+    pausedMonitors: monitors.filter(m => m.status === 'PAUSED').length,
     memberSince: '2024-01-01'
   };
 
@@ -151,6 +196,29 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
         background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
         position: 'relative',
         overflow: 'hidden',
+        // Radar animation keyframes
+        '@keyframes radarPulse': {
+          '0%': {
+            transform: 'translate(-50%, -50%) scale(0.8)',
+            opacity: 0.8,
+          },
+          '50%': {
+            transform: 'translate(-50%, -50%) scale(1.2)',
+            opacity: 0.4,
+          },
+          '100%': {
+            transform: 'translate(-50%, -50%) scale(0.8)',
+            opacity: 0.8,
+          },
+        },
+        '@keyframes radarSweep': {
+          '0%': {
+            transform: 'translate(-50%, -50%) rotate(0deg)',
+          },
+          '100%': {
+            transform: 'translate(-50%, -50%) rotate(360deg)',
+          },
+        },
         // Radar animation background
         '&::before': {
           content: '""',
@@ -224,20 +292,6 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                 Your Website Monitoring Solution 
               </Typography>
             </Box>
-            <Button
-              variant="outlined"
-              onClick={onLogout}
-              sx={{
-                color: '#00ff7f',
-                borderColor: '#00ff7f',
-                '&:hover': {
-                  borderColor: '#00cc64',
-                  backgroundColor: 'rgba(0, 255, 127, 0.1)',
-                },
-              }}
-            >
-              Logout
-            </Button>
           </Box>
 
           {/* User Profile Card */}
@@ -294,7 +348,7 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                     />
                     <Chip
                       icon={<Security />}
-                      label={`${userStats.onlineMonitors} Online`}
+                      label={`${userStats.pausedMonitors} Paused`}
                       sx={{
                         backgroundColor: 'rgba(0, 255, 127, 0.1)',
                         color: '#00ff7f',
@@ -307,6 +361,10 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                   <Button
                     variant="contained"
                     startIcon={<Add />}
+                    onClick={() => {
+                      console.log('Add Monitor button clicked');
+                      navigate('/create-monitor');
+                    }}
                     sx={{
                       background: 'linear-gradient(45deg, #00ff7f, #00cc64)',
                       color: '#000000',
@@ -433,7 +491,7 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             <IconButton
                               size="small"
-                              onClick={() => onNavigate('dashboard')}
+                              onClick={() => navigate('/dashboard')}
                               sx={{
                                 color: '#00ff7f',
                                 '&:hover': {
@@ -456,6 +514,7 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
                             </IconButton>
                             <IconButton
                               size="small"
+                              onClick={() => handleDeleteClick(monitor)}
                               sx={{
                                 color: '#ff4444',
                                 '&:hover': {
@@ -495,6 +554,43 @@ const HomePage = ({ user, onLogout, onNavigate }) => {
           </CardContent>
         </Card>
       </Container>
+
+      {/* Floating Action Button for Create Monitor */}
+      <Fab
+        color="primary"
+        sx={{
+          position: 'fixed',
+          bottom: 32,
+          right: 32,
+          background: 'linear-gradient(45deg, #00ff7f, #00cc64)',
+          color: '#000000',
+          '&:hover': {
+            background: 'linear-gradient(45deg, #00cc64, #00a050)',
+            transform: 'scale(1.1)',
+          },
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: '0 8px 25px rgba(0, 255, 127, 0.4)',
+          zIndex: 1000,
+        }}
+        onClick={() => {
+          console.log('Create monitor FAB clicked');
+          navigate('/create-monitor');
+        }}
+      >
+        <Add />
+      </Fab>
+
+      {/* Delete Monitor Modal */}
+      <DeleteMonitorModal
+        open={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setSelectedMonitor(null);
+        }}
+        monitor={selectedMonitor}
+        user={user}
+        onDelete={handleDeleteConfirm}
+      />
     </Box>
   );
 };

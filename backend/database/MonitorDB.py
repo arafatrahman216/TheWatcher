@@ -1,3 +1,4 @@
+from typing import Dict
 from pydantic import BaseModel
 from database.AuthDB import get_db_connection
 
@@ -10,14 +11,13 @@ class MonitorCreate(BaseModel):
     monitor_created: str
     interval: int
 
-def _create_new_monitor(monitor: MonitorCreate):
+def _create_new_monitor(monitor: Dict[str, any]):
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
-        print("hiiii")
-        cursor.execute("""INSERT INTO monitors (monitorid,userid, sitename, site_url, monitor_created)
-            VALUES (%s, %s, %s, %s, %s) RETURNING monitorid
-                       """, (monitor.monitorid, monitor.userid, monitor.sitename, monitor.site_url, monitor.monitor_created))
+        cursor.execute("""INSERT INTO monitors (monitorid,userid, sitename, site_url)
+            VALUES (%s, %s, %s, %s) RETURNING monitorid
+                       """, (monitor["monitorid"], monitor["userid"], monitor["sitename"], monitor["site_url"]))
 
         result = cursor.fetchone()
         if result:

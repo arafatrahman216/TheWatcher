@@ -57,11 +57,14 @@ from dotenv import load_dotenv
 import hashlib
 import secrets
 
+from services.auth_mail_pkg.email_service import EmailService
+
 USER = os.getenv("user")
 PASSWORD = os.getenv("password")
 HOST = os.getenv("host")
 PORT = os.getenv("port")
 DBNAME = os.getenv("dbname")
+OTP_EXPIRY = int(os.getenv("OTP_EXPIRY", 1))  # in minutes, default to 1 minute if not set
 
 def get_db_connection():
     """Get database connection"""
@@ -96,7 +99,7 @@ def signup_user(name, email, password):
         # Hash password and generate OTP
         passhash = hash_password(password)
         otp = generate_otp()
-        otp_expiry = datetime.now() + timedelta(minutes=1 )
+        otp_expiry = datetime.now() + timedelta(minutes=OTP_EXPIRY) 
         
         cursor.execute("""
             INSERT INTO users (name, email, passhash, email_verified, verification_otp, otp_expiry)
@@ -106,6 +109,7 @@ def signup_user(name, email, password):
         
         user_id = cursor.fetchone()[0]
         connection.commit()  ; cursor.close()  ; connection.close()
+        EmailService().send_otp_email(recipient_email=email, otp=otp, expire=OTP_EXPIRY)
         
         return {
             "success": True,
@@ -197,6 +201,46 @@ def verify_email_otp(email, otp):
     except Exception as e:
         return {"success": False, "message": f"Verification failed: {str(e)}"}
 
+
+def verify_otp(email, otp):
+    """Verify OTP"""
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        
+        # Check OTP
+        cursor.execute("""
+            SELECT id, verification_otp, otp_expiry, email_verified
+            FROM users WHERE email = %s
+        """, (email,))
+        
+        user = cursor.fetchone()
+        if not user:
+            return {"success": False, "message": "User not found"}
+        
+        user_id, stored_otp, otp_expiry, email_verified = user
+        
+        if not stored_otp or stored_otp != otp:
+            return {"success": False, "message": "Invalid OTP"}
+        
+        if datetime.now() > otp_expiry:
+            return {"success": False, "message": "OTP expired"}
+        
+        # Mark email as verified
+        cursor.execute("""
+            UPDATE users 
+            SET verification_otp = NULL, otp_expiry = NULL
+            WHERE id = %s
+        """, (user_id,))
+        
+        connection.commit()  ; cursor.close()  ; connection.close()
+        return {"success": True, "message": "OTP verified successfully"}
+        
+    except Exception as e:
+        return {"success": False, "message": f"Verification failed: {str(e)}"}
+
+
+
 def test_connection():
     """Test database connection"""
     try:
@@ -215,3 +259,33 @@ def test_connection():
     except Exception as e:
         print(f"Failed to connect: {e}")
         return False
+
+def resend_email_otp(email):
+    """Resend OTP to user's email"""
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        
+        # Generate new OTP
+        new_otp = generate_otp()
+        otp_expiry = datetime.now() + timedelta(minutes=int(os.getenv("OTP_EXPIRY", 5)))
+        
+        # Update OTP in database
+        cursor.execute("""
+            UPDATE users
+            SET verification_otp = %s, otp_expiry = %s
+            WHERE email = %s
+        """, (new_otp, otp_expiry, email))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        # Send OTP email
+        service = EmailService()
+        service.send_otp_email(email, new_otp, expire=otp_expiry)
+        
+        return {"success": True, "message": "OTP resent successfully"}
+        
+    except Exception as e:
+        return {"success": False, "message": f"Resend OTP failed: {str(e)}"}

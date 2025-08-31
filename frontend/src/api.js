@@ -119,6 +119,82 @@ export const authAPI = {
 // Helper Functions
 // ==========================================
 
+export const monitorAPI = {
+  // Create a new monitor
+  async createMonitor(monitorData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/monitors/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(monitorData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to create monitor');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Create monitor error:', error);
+      throw error;
+    }
+  },
+
+  // Get user monitors
+  async getUserMonitors(userId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/monitors/user/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to fetch monitors');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Fetch monitors error:', error);
+      throw error;
+    }
+  },
+
+  // Delete a monitor
+  async deleteMonitor(userId, monitorId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/monitors/delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          monitor_id: monitorId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to delete monitor');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Delete monitor error:', error);
+      throw error;
+    }
+  },
+};
+
 export const apiHelpers = {
   // Generic API request with error handling
   async makeRequest(url, options = {}) {
@@ -144,11 +220,35 @@ export const apiHelpers = {
     }
   },
 
-  // Format validation errors
-  formatErrors(errors) {
-    if (Array.isArray(errors)) {
-      return errors.join('; ');
+  // Format validation errors consistently
+  formatError(error) {
+    if (typeof error === 'string') {
+      return error;
     }
-    return errors || 'Unknown error';
+    
+    if (Array.isArray(error)) {
+      return error.map(err => {
+        if (typeof err === 'string') return err;
+        if (err.msg) return err.msg;
+        if (err.message) return err.message;
+        return JSON.stringify(err);
+      }).join('; ');
+    }
+    
+    if (typeof error === 'object' && error !== null) {
+      if (error.msg) return error.msg;
+      if (error.message) return error.message;
+      if (error.detail) {
+        return this.formatError(error.detail);
+      }
+      return JSON.stringify(error);
+    }
+    
+    return 'Unknown error occurred';
+  },
+
+  // Format validation errors (legacy - for backward compatibility)
+  formatErrors(errors) {
+    return this.formatError(errors);
   }
 };

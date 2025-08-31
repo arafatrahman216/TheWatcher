@@ -6,7 +6,7 @@ Clean and reusable API endpoints for user authentication
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from database.AuthDB import signup_user, login_user, verify_email_otp
+from database.AuthDB import resend_email_otp, signup_user, login_user, verify_email_otp
 import logging
 
 logger = logging.getLogger(__name__)
@@ -68,8 +68,6 @@ async def signup(request: SignupRequest):
             success=True,
             message=result["message"],
             user_id=result["user_id"],
-            otp=result["otp"],
-            otp_expires=result["otp_expires"]
         )
         
     except HTTPException:
@@ -151,6 +149,41 @@ async def verify_email(request: VerifyEmailRequest):
             detail="Internal server error during email verification"
         )
 
+@auth_router.post("/resend-otp", response_model=AuthResponse) 
+async def resend_otp(request: VerifyEmailRequest):
+    """
+    Resend OTP to user's email
+    """
+    try:
+        # Call database function to resend OTP
+        result = resend_email_otp(request.email)
+        
+        if not result["success"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=result["message"]
+            )
+        
+        logger.info(f"OTP resent successfully: {request.email}")
+        
+        return AuthResponse(
+            success=True,
+            message=result["message"],
+            otp=result.get("otp"),
+            otp_expires=result.get("otp_expires")
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Resend OTP error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during OTP resend"
+        )   
+    
+
+
 @auth_router.get("/health")
 async def auth_health():
     """
@@ -173,6 +206,9 @@ async def auth_health():
             "service": "authentication",
             "error": str(e)
         }
+    
+
+
 
 # Export router
 __all__ = ["auth_router"]
