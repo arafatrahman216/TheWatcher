@@ -76,9 +76,9 @@ const DeleteMonitorModal = ({
   const handleDelete = async () => {
     setLoading(true);
     try {
-        console.log('Deleting monitor with ID:', monitor.id, 'for user ID:', user.id);
+      console.log('Deleting monitor with ID:', monitor.id, 'for user ID:', user.id);
       await onDelete(monitor.id, user.id);
-      onClose();
+      // Don't close modal here - let parent component handle it after refetching
       resetModal();
     } catch (err) {
       setError('Failed to delete monitor. Please try again.');
@@ -176,12 +176,12 @@ const DeleteMonitorModal = ({
               </Typography>
               <Box mt={1}>
                 <Chip
-                  label={monitor.is_active ? 'Active' : 'Inactive'}
+                  label={monitor.status === 'UP' ? 'Active' : 'Inactive'}
                   size="small"
                   sx={{
-                    backgroundColor: monitor.is_active ? 'rgba(0, 255, 127, 0.2)' : 'rgba(255, 107, 107, 0.2)',
-                    color: monitor.is_active ? '#00ff7f' : '#ff6b6b',
-                    border: `1px solid ${monitor.is_active ? '#00ff7f' : '#ff6b6b'}`,
+                    backgroundColor: monitor.status === 'UP' ? 'rgba(0, 255, 127, 0.2)' : 'rgba(255, 107, 107, 0.2)',
+                    color: monitor.status === 'UP' ? '#00ff7f' : '#ff6b6b',
+                    border: `1px solid ${monitor.status === 'UP' ? '#00ff7f' : '#ff6b6b'}`,
                   }}
                 />
               </Box>

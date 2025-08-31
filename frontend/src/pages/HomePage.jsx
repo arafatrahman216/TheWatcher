@@ -153,7 +153,6 @@ const HomePage = ({ user }) => {
 
   const handleDeleteConfirm = async (monitorId, userId) => {
     try {
-
       console.log('** Deleting monitor with ID:', monitorId, 'for user ID:', userId);  
       const response = await fetch(`${API_BASE_URL}/monitors/delete`, {
         method: 'POST',
@@ -167,9 +166,13 @@ const HomePage = ({ user }) => {
       });
 
       if (response.ok) {
-        // Remove the deleted monitor from the list
-        setMonitors(monitors.filter(m => m.monitorid !== monitorId));
+        // Refetch monitors to get the updated list from server
+        await fetchMonitors();
         setError(null);
+        
+        // Close the delete modal
+        setDeleteModalOpen(false);
+        setSelectedMonitor(null);
       } else {
         const data = await response.json();
         const errorMessage = apiHelpers.formatError(data.detail) || 'Failed to delete monitor';
@@ -186,6 +189,7 @@ const HomePage = ({ user }) => {
     totalMonitors: monitors.length,
     activeMonitors: monitors.filter(m => m.status === 'UP').length,
     pausedMonitors: monitors.filter(m => m.status === 'PAUSED').length,
+    downMonitors: monitors.filter(m => m.status === 'DOWN').length,
     memberSince: '2024-01-01'
   };
 
@@ -347,6 +351,15 @@ const HomePage = ({ user }) => {
                       }}
                     />
                     <Chip
+                      icon={<CheckCircle />}
+                      label={`${userStats.downMonitors} Down`}
+                      sx={{
+                        backgroundColor: 'rgba(0, 255, 127, 0.1)',
+                        color: '#dde331ff',
+                        border: '1px solid rgba(255, 60, 0, 1)',
+                      }}
+                    />
+                    <Chip
                       icon={<Security />}
                       label={`${userStats.pausedMonitors} Paused`}
                       sx={{
@@ -485,7 +498,7 @@ const HomePage = ({ user }) => {
                           {formatDate(monitor.createDateTime)}
                         </TableCell>
                         <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                          {(monitor.interval)}
+                          {(monitor.interval) / 60} min
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', gap: 1 }}>

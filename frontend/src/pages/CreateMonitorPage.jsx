@@ -365,6 +365,28 @@ const CreateMonitorPage = ({ user }) => {
                 <Select
                   value={formData.interval}
                   onChange={(e) => handleInputChange('interval', e.target.value)}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                        backdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(0, 255, 127, 0.2)',
+                        borderRadius: 2,
+                        '& .MuiMenuItem-root': {
+                          color: '#ffffff',
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 255, 127, 0.1)',
+                          },
+                          '&.Mui-selected': {
+                            backgroundColor: 'rgba(0, 255, 127, 0.2)',
+                            '&:hover': {
+                              backgroundColor: 'rgba(0, 255, 127, 0.3)',
+                            },
+                          },
+                        },
+                      },
+                    },
+                  }}
                   sx={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     '& .MuiOutlinedInput-notchedOutline': {
