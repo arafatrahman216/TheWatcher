@@ -192,7 +192,7 @@ class UptimeRobotAPI:
             logger.error(f"Error fetching monitors: {e}")
             return []
 
-    def _get_monitor_by_id(self, monitor_id: str) -> Dict[str, Any]:
+    def _get_monitor_by_monitor_id(self, monitor_id: str) -> Dict[str, Any]:
         """Get a specific monitor by ID from UptimeRobot API"""
         try:
             url = f"{self.updates_url}/monitors/{monitor_id}"

@@ -31,6 +31,20 @@ class DeleteRequest(BaseModel):
 # Create a router with prefix
 router = APIRouter(prefix="/monitors", tags=["monitors"])
 
+
+@router.post("")
+async def get_monitor_by_id(request : DeleteRequest, db: Session = Depends(get_db)):
+    try :
+        user_id = request.user_id
+        print(user_id)
+        all_monitors = UptimeRobotAPI()._get_all_monitors()
+
+        return {"message": "Monitor routes working!"}
+    except Exception as e:
+        logger.error(f"Error fetching monitor by ID: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch monitor by ID")
+
+
 @router.post("/debug")
 async def debug_request(request: Request):
     """Debug endpoint to see raw request data"""
@@ -105,6 +119,8 @@ async def delete_monitor(request : DeleteRequest, db: Session = Depends(get_db))
 async def get_monitor_info():
     """Test endpoint"""
     return {"message": "Monitor routes working!"}
+
+
 
 # Function to register routes with main router
 def register(main_router):
