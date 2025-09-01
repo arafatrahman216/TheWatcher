@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import logging
+from database.schemas import UptimeCheckResponse
 
 from sqlalchemy import false
 
@@ -60,18 +61,18 @@ class UptimeRobotAPI:
             logger.info("Falling back to direct HTTP check")
             return self._direct_http_check()
     
-    def _get_monitors(self) -> Dict[str, Any]:
+    def _get_monitors(self, monitor_id: int) -> Dict[str, Any]:
         """Get all monitors from UptimeRobot"""
         try:
             url = f"{self.base_url}/getMonitors"
             data = {
                 "api_key": self.api_key,
                 "format": "json",
-                # "monitors": "801132286",  # Specific monitor ID for FabricX AI
+                # "monitors": monitor_id,
                 "logs": "1",
                 "response_times": "1",
                 # "response_times_limit": "50",
-                "response_times_average": "0",
+                "response_times_average": "1",
                 "custom_uptime_ratios": "30-7-1"
             }
             logger.debug(f"Making request to {url}")
@@ -90,14 +91,6 @@ class UptimeRobotAPI:
         except Exception as e:
             logger.error(f"Unexpected error when getting monitors: {e}")
             return {}
-    
-    def _get_monitor_details(self, monitor_id: str) -> Dict[str, Any]:
-        """Get detailed information for a specific monitor"""
-        return self._get_monitors()
-    
-    def _find_monitor_by_url(self, monitors: List[Dict], target_url: str) -> Optional[Dict]:
-        """Find monitor that matches the target URL"""
-        return monitors[0] if monitors else None
     
     def _format_monitor_data(self, monitor: Dict[str, Any]) -> Dict[str, Any]:
         """Format UptimeRobot monitor data to our standard format"""
@@ -280,3 +273,159 @@ class UptimeRobotAPI:
         except requests.exceptions.RequestException as e:
             logger.error(f"\nError deleting monitor {monitor_id}: {e}")
             return {}
+        
+
+    def _get_stats_activity(self, monitor_id:str):
+        try :
+            monitors = self._get_monitors(monitor_id)
+            monitors= monitors.get("monitors")[0]
+            monitor= {}
+            logs={}
+            if monitors :
+                res_times = monitors.get("response_times", [])
+                logs = monitors.get("logs", [])
+                monitor = {
+                    "id": monitors.get("id"),
+                    "interval": monitors.get("interval"),
+                    "friendlyName": monitors.get("friendly_name"),
+                    "url": monitors.get("url"),
+                    "status": monitors.get("status"),
+                    "is_active": (monitors.get("status") == 2),
+                    "createDateTime": monitors.get("create_datetime"),
+                    # "response_times": res_times,
+                    "custom_uptime_ratio" : monitors.get("custom_uptime_ratio", 0),
+                    
+                }
+            logs = sorted(logs, key=lambda x: x.get("datetime", 0), reverse=True)
+            recent_activity = []
+            for log in logs:
+                processed_log = _process_uptimerobot_log(log, {})
+                if processed_log:
+                    recent_activity.append(processed_log)
+            log_timestamps = {int(log.get("datetime", 0)) for log in logs}
+    
+            for rt in res_times:
+                processed_rt = _process_response_time_entry(rt, {})
+                if processed_rt:
+                    recent_activity.append(processed_rt)
+            recent_activity.sort(key=lambda x: x.timestamp, reverse=True)
+
+            return {
+                "monitor" : monitor,
+                "recent_activity": recent_activity,
+                "checks" : recent_activity
+            }
+        except Exception as e:
+            logger.error(f"Error fetching stats activity for monitor {monitor_id}: {e}")
+            return []
+        
+
+def _process_uptimerobot_log(log: Dict[str, Any], response_times_dict: Dict[int, float]) -> Optional[UptimeCheckResponse]:
+    """Process a single UptimeRobot log entry"""
+    timestamp = log.get("datetime", 0)
+    log_datetime = _validate_timestamp(timestamp)
+    if not log_datetime:
+        return None
+    
+    log_type = log.get("type", 0)
+    is_up = log_type == 2
+    reason = log.get("reason", {})
+    
+    # Determine status code and error message
+    status_code = None
+    error_message = None
+    
+    if is_up:
+        status_code = int(reason.get("code", 200)) if reason.get("code") else 200
+    else:
+        error_message = reason.get("detail", "Monitor was down")
+        if reason.get("code"):
+            try:
+                status_code = int(reason.get("code"))
+            except (ValueError, TypeError):
+                status_code = None
+    
+    # Get response time for successful checks
+    response_time = None
+    if is_up:
+        response_time = _find_closest_response_time(int(timestamp), response_times_dict)
+    
+    return UptimeCheckResponse(
+        id=int(log.get('id', timestamp)),
+        website_id=0,
+        is_up=is_up,
+        response_time=response_time,
+        status_code=status_code,
+        error_message=error_message,
+        timestamp=log_datetime
+    )
+
+
+
+def _process_response_time_entry(rt: Dict[str, Any], existing_log_timestamps: set) -> Optional[UptimeCheckResponse]:
+    """Process a response time entry that doesn't have a corresponding log"""
+    timestamp = rt.get("datetime", 0)
+    rt_datetime = _validate_timestamp(timestamp)
+    if not rt_datetime:
+        return None
+    
+    try:
+        rt_value = float(rt.get("value", 0))
+        if rt_value < 0:
+            return None
+    except (ValueError, TypeError):
+        return None
+    
+    # Check if this response time already has a log entry (within 5 minutes)
+    timestamp_int = int(timestamp)
+    has_log_entry = any(
+        abs(log_ts - timestamp_int) <= 300 
+        for log_ts in existing_log_timestamps
+    )
+    
+    if has_log_entry:
+        return None
+        
+    return UptimeCheckResponse(
+        id=timestamp_int,
+        website_id=0,
+        is_up=True,
+        response_time=rt_value,
+        status_code=200,
+        error_message=None,
+        timestamp=rt_datetime
+    )
+
+
+def _validate_timestamp(timestamp: Any) -> Optional[datetime]:
+    """Validate and convert timestamp to datetime object"""
+    try:
+        timestamp_int = int(timestamp)
+        if timestamp_int <= 0:
+            return None
+            
+        dt = datetime.utcfromtimestamp(timestamp_int)
+        current_time = datetime.utcnow()
+        
+        # Skip timestamps more than 1 year away
+        if abs((dt - current_time).days) > 365:
+            return None
+            
+        return dt
+    except (ValueError, TypeError, OSError):
+        return None
+
+
+def _find_closest_response_time(target_timestamp: int, response_times_dict: Dict[int, float], max_diff: int = 3600) -> Optional[float]:
+    """Find the closest response time within max_diff seconds"""
+    closest_time = None
+    min_diff = float('inf')
+    
+    for rt_timestamp, rt_value in response_times_dict.items():
+        time_diff = abs(rt_timestamp - target_timestamp)
+        if time_diff < min_diff and time_diff <= max_diff:
+            min_diff = time_diff
+            closest_time = rt_value
+            
+    return closest_time
+

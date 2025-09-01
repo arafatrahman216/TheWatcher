@@ -8,6 +8,12 @@ monitor = {
 }
 
 
-resp = UptimeRobotAPI()._delete_monitor(user_id=4, monitor_id=801273225)
+# resp = UptimeRobotAPI()._get_monitors(801275358)
+# resp1= UptimeRobotAPI()._get_stats_activity(801275358)
 
-print(resp)
+resp1= UptimeRobotAPI()._get_monitors(801275358)
+print(resp1)
+
+# print(resp.get("monitors")[0].get("response_times"))
+print("---------------------")
+# print(resp1)

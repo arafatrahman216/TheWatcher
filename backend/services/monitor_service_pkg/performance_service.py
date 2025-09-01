@@ -51,17 +51,3 @@ async def fetch_lighthouse_score(url: str, strategy: str = "mobile") -> Dict:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Could not parse Lighthouse result: {e}")
 
-def register(router: APIRouter):
-    @router.get("/performance", tags=["performance"])
-    async def get_performance(
-        url: str = Query(None, description="Website URL to test (include https://)"),
-        strategy: str = Query("mobile", regex="^(mobile|desktop)$")
-    ):
-        # Use default if URL not provided
-        target_url = url or DEFAULT_WEBSITE_URL
-        if not target_url:
-            raise HTTPException(status_code=400, detail="No website URL provided or configured")
-        return await fetch_lighthouse_score(target_url, strategy)
-
-        "category": "performance"
-    

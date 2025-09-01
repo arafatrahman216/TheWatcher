@@ -42,7 +42,7 @@ export default function UptimeCard({ stats }) {
             component="div"
             sx={{ fontWeight: 700, color: 'white', fontSize: '3.5rem', lineHeight: 1, mb: 1 }}
           >
-            {uptimePercentage.toFixed(2)}%
+            {uptimePercentage}%
           </Typography>
           <Chip label={getUptimeStatus()} color={getUptimeColor()} sx={{ fontSize: '0.875rem', fontWeight: 600, mb: 2 }} />
           <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', mb: 3 }}>
@@ -56,7 +56,7 @@ export default function UptimeCard({ stats }) {
               Uptime Progress
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-              {uptimePercentage.toFixed(1)}%
+              {uptimePercentage}%
             </Typography>
           </Box>
           <LinearProgress
@@ -90,7 +90,7 @@ export default function UptimeCard({ stats }) {
           </Box>
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-              {avgResponseTime.toFixed(0)}ms
+              {avgResponseTime}ms
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
               Avg Response

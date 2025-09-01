@@ -47,15 +47,19 @@ function Dashboard({ user }) {
       setError(null);
       // If a specific monitor is selected, fetch data for that monitor
       const monitorParam = selectedMonitor ? `?monitor=${selectedMonitor.monitorid}` : '';
-      const [websiteResponse, statsResponse, checksResponse, sslCertResponse] = await Promise.all([
-        axios.get(`${API_BASE_URL}/website${monitorParam}`),
+      var [ statsResponse, checksResponse, sslCertResponse] = await Promise.all([
         axios.get(`${API_BASE_URL}/stats${monitorParam}`),
-        axios.get(`${API_BASE_URL}/checks${monitorParam}`),
+        // axios.get(`${API_BASE_URL}/checks${monitorParam}`),
+        (axios.get(`${API_BASE_URL}/recent-activity`)),
         axios.get(`${API_BASE_URL}/ssl-cert${monitorParam}`),
       ]);
+      var websiteResponse = checksResponse.data.monitor;
+      console.log(websiteResponse);
+      checksResponse = checksResponse.data.checks;
+      console.log(checksResponse);
       updateStateIfChanged(setWebsite, websiteResponse.data, website);
       updateStateIfChanged(setStats, statsResponse.data, stats);
-      updateStateIfChanged(setChecks, checksResponse.data, checks);
+      updateStateIfChanged(setChecks, checksResponse, checks);
       updateStateIfChanged(setSSLCert, sslCertResponse.data, sslCert);
       setLoading(false);
     } catch (err) {
