@@ -34,33 +34,7 @@ class UptimeRobotAPI:
         if not self.api_key:
             logger.warning("UptimeRobot API key not found. Will use direct HTTP checks as fallback.")
     
-    def get_monitor_data(self, monitor_id: Optional[str] = None) -> Dict[str, Any]:
-        """Get monitor data from UptimeRobot API"""
-        if not self.api_key:
-            logger.info("No UptimeRobot API key, using direct HTTP check")
-            return self._direct_http_check()
-        
-        try:
-            logger.info("Attempting to fetch data from UptimeRobot API")
-            monitors_data = self._get_monitors()
-            
-            if not monitors_data:
-                logger.error("Failed to get monitors data from UptimeRobot")
-                return self._direct_http_check()
-                
-            if "monitors" not in monitors_data or not monitors_data["monitors"]:
-                logger.error(f"No monitors found in UptimeRobot response: {monitors_data}")
-                return self._direct_http_check()
-            
-            monitor = monitors_data["monitors"][0]
-            logger.info(f"Found monitor: {monitor.get('friendly_name', 'Unknown')} (ID: {monitor.get('id')})")
-            return self._format_monitor_data(monitor)
-            
-        except Exception as e:
-            logger.error(f"Error fetching from UptimeRobot API: {e}")
-            logger.info("Falling back to direct HTTP check")
-            return self._direct_http_check()
-    
+
     def _get_monitors(self, monitor_id: int) -> Dict[str, Any]:
         """Get all monitors from UptimeRobot"""
         try:
@@ -92,74 +66,6 @@ class UptimeRobotAPI:
             logger.error(f"Unexpected error when getting monitors: {e}")
             return {}
     
-    def _format_monitor_data(self, monitor: Dict[str, Any]) -> Dict[str, Any]:
-        """Format UptimeRobot monitor data to our standard format"""
-        response_times = monitor.get("response_times", [])
-        latest_response_time = None
-        if response_times:
-            sorted_response_times = sorted(response_times, key=lambda x: x.get("datetime", 0), reverse=True)
-            latest_response_time = float(sorted_response_times[0].get("value", 0))
-        
-        logs = monitor.get("logs", [])
-        status_code = None
-        error_message = None
-        if logs:
-            sorted_logs = sorted(logs, key=lambda x: x.get("datetime", 0), reverse=True)
-            latest_log = sorted_logs[0]
-            log_type = latest_log.get("type", 0)
-            if log_type == 2:  # Up
-                reason = latest_log.get("reason", {})
-                status_code = int(reason.get("code", 200)) if reason.get("code") else 200
-            elif log_type == 1:  # Down
-                reason = latest_log.get("reason", {})
-                error_message = reason.get("detail", "Monitor is down")
-                status_code = int(reason.get("code")) if reason.get("code") and str(reason.get("code")).isdigit() else None
-        
-        status = monitor.get("status", 0)
-        is_up = status == 2  # 2 = Up in UptimeRobot
-        
-        custom_uptime_ratio = monitor.get("custom_uptime_ratio", "0-0-0")
-        uptime_ratios = custom_uptime_ratio.split("-")
-        uptime_ratio = float(uptime_ratios[0]) if uptime_ratios else 0
-        
-        return {
-            "url": monitor.get("url", ""),
-            "status_code": status_code,
-            "response_time": latest_response_time,
-            "is_up": is_up,
-            "error_message": error_message,
-            "timestamp": datetime.utcnow().isoformat(),
-            "monitor_id": monitor.get("id"),
-            "monitor_name": monitor.get("friendly_name", ""),
-            "uptime_ratio": uptime_ratio
-        }
-    
-    def _direct_http_check(self) -> Dict[str, Any]:
-        """Fallback to direct HTTP check if UptimeRobot API is not available"""
-        url = os.getenv("MONITORED_WEBSITE_URL", "https://www.fabricxai.com/")
-        try:
-            start_time = time.time()
-            response = requests.get(url, timeout=30)
-            end_time = time.time()
-            response_time = (end_time - start_time) * 1000  # ms
-            return {
-                "url": url,
-                "status_code": response.status_code,
-                "response_time": response_time,
-                "is_up": response.status_code == 200,
-                "error_message": None if response.status_code == 200 else f"HTTP {response.status_code}",
-                "timestamp": datetime.utcnow().isoformat()
-            }
-        except requests.exceptions.RequestException as e:
-            return {
-                "url": url,
-                "status_code": None,
-                "response_time": None,
-                "is_up": False,
-                "error_message": str(e),
-                "timestamp": datetime.utcnow().isoformat()
-            }
-
     def _get_all_monitors(self) -> List[Dict[str, Any]]:
         """Get all monitors from UptimeRobot API"""
         try:
@@ -275,51 +181,6 @@ class UptimeRobotAPI:
             return {}
         
 
-    def _get_stats_activity(self, monitor_id:str):
-        try :
-            monitors = self._get_monitors(monitor_id)
-            monitors= monitors.get("monitors")[0]
-            monitor= {}
-            logs={}
-            if monitors :
-                res_times = monitors.get("response_times", [])
-                logs = monitors.get("logs", [])
-                monitor = {
-                    "id": monitors.get("id"),
-                    "interval": monitors.get("interval"),
-                    "friendlyName": monitors.get("friendly_name"),
-                    "name": monitors.get("friendly_name"),
-                    "url": monitors.get("url"),
-                    "status": monitors.get("status"),
-                    "is_active": (monitors.get("status") == 2),
-                    "createDateTime": monitors.get("create_datetime"),
-                    "created_at": datetime.utcfromtimestamp(monitors.get("create_datetime")) if monitors.get("create_datetime") else None,
-                    # "response_times": res_times,
-                    "custom_uptime_ratio" : monitors.get("custom_uptime_ratio", 0),
-                    
-                }
-            logs = sorted(logs, key=lambda x: x.get("datetime", 0), reverse=True)
-            recent_activity = []
-            for log in logs:
-                processed_log = _process_uptimerobot_log(log, {})
-                if processed_log:
-                    recent_activity.append(processed_log)
-            log_timestamps = {int(log.get("datetime", 0)) for log in logs}
-    
-            for rt in res_times:
-                processed_rt = _process_response_time_entry(rt, {})
-                if processed_rt:
-                    recent_activity.append(processed_rt)
-            recent_activity.sort(key=lambda x: x.timestamp, reverse=True)
-
-            return {
-                "monitor" : monitor,
-                "recent_activity": recent_activity,
-                "checks" : recent_activity
-            }
-        except Exception as e:
-            logger.error(f"Error fetching stats activity for monitor {monitor_id}: {e}")
-            return []
         
 
 def _process_uptimerobot_log(log: Dict[str, Any], response_times_dict: Dict[int, float]) -> Optional[UptimeCheckResponse]:

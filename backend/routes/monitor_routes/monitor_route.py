@@ -53,19 +53,6 @@ async def get_monitor_by_id(request : DeleteRequest, db: Session = Depends(get_d
         raise HTTPException(status_code=500, detail="Failed to fetch monitor by ID")
 
 
-@router.post("/debug")
-async def debug_request(request: Request):
-    """Debug endpoint to see raw request data"""
-    body = await request.body()
-    try:
-        import json
-        json_data = json.loads(body)
-        logger.info(f"Raw request body: {json_data}")
-        return {"received": json_data}
-    except Exception as e:
-        logger.error(f"Debug error: {e}")
-        return {"error": str(e), "raw_body": body.decode()}
-
 @router.post("/create")
 async def create_monitor(request: CreateMonitorRequest, db: Session = Depends(get_db)):
     """Create a new monitor"""
@@ -98,15 +85,6 @@ async def create_monitor(request: CreateMonitorRequest, db: Session = Depends(ge
         logger.error(f"Error creating monitor: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create monitor: {str(e)}")
 
-@router.get("/user/{user_id}")
-async def get_user_monitors(user_id: int, db: Session = Depends(get_db)):
-    """Get all monitors for a user"""
-    try:
-        # Add function to get user monitors from MonitorDB
-        return {"monitors": []}
-    except Exception as e:
-        logger.error(f"Error fetching monitors: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch monitors")
 
 @router.post("/delete")
 async def delete_monitor(request : DeleteRequest, db: Session = Depends(get_db)):
@@ -122,11 +100,6 @@ async def delete_monitor(request : DeleteRequest, db: Session = Depends(get_db))
     except Exception as e:
         logger.error(f"Error deleting monitor: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete monitor")
-
-@router.get("/hi")
-async def get_monitor_info():
-    """Test endpoint"""
-    return {"message": "Monitor routes working!"}
 
 
 
