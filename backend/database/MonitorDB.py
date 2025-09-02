@@ -59,8 +59,6 @@ def get_monitor_info(monitor_id):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM monitors WHERE monitorid = %s", (str(monitor_id),))
         monitor = cursor.fetchone()
-        print(monitor_id)
-        print(monitor)
         monitor = {
             "monitorid": monitor[0],
             "userid": monitor[1],
@@ -69,6 +67,7 @@ def get_monitor_info(monitor_id):
             "monitor_created": monitor[4],
             "is_active": monitor[5]
         }
+        # print(monitor)
         if monitor:
             return {"success": True, "data": monitor}
         else:
@@ -79,16 +78,6 @@ def get_monitor_info(monitor_id):
         cursor.close()
         connection.close()
 
-# if __name__ == "__main__":
-#     data= {
-#         "monitorid": 101,
-#         "userid": 4,
-#         "sitename": "Example Site",
-#         "site_url": "https://www.example.com",
-#         "monitor_created": "2023-10-01"
-#     }
-#     result = _delete_monitor(101)
-#     print(result)
 
 
 

@@ -75,8 +75,6 @@ function Dashboard({ user, selectedMonitor }) {
         console.log('Fetched recent activity data:', checksData); 
         updateStateIfChanged(setChecks, checksData, checks);
         checksResponse = await axios.get(`${API_BASE_URL}/recent-activity`);
-        const websiteData = checksResponse.data.monitor;
-        updateStateIfChanged(setWebsite, websiteData, website);
       } catch (err) {
         console.error('Error fetching recent activity data:', err);
       }
