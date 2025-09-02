@@ -52,6 +52,33 @@ def _delete_monitor(monitor_id):
         cursor.close()
         connection.close()
 
+
+def get_monitor_info(monitor_id):
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM monitors WHERE monitorid = %s", (str(monitor_id),))
+        monitor = cursor.fetchone()
+        print(monitor_id)
+        print(monitor)
+        monitor = {
+            "monitorid": monitor[0],
+            "userid": monitor[1],
+            "sitename": monitor[2],
+            "site_url": monitor[3],
+            "monitor_created": monitor[4],
+            "is_active": monitor[5]
+        }
+        if monitor:
+            return {"success": True, "data": monitor}
+        else:
+            return {"success": False, "message": "Monitor not found"}
+    except Exception as e:
+        return {"success": False, "message": f"Database error: {str(e)}"}
+    finally:
+        cursor.close()
+        connection.close()
+
 # if __name__ == "__main__":
 #     data= {
 #         "monitorid": 101,

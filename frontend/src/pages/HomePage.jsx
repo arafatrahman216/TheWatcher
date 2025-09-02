@@ -40,7 +40,7 @@ import { API_BASE_URL, apiHelpers } from '../api';
 import axios from 'axios';
 import DeleteMonitorModal from '../components/HomeComponent/DeleteMonitorModal';
 
-const HomePage = ({ user }) => {
+const HomePage = ({ user, setSelectedDashboardMonitor }) => {
   const navigate = useNavigate();
   const [monitors, setMonitors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -504,7 +504,10 @@ const HomePage = ({ user }) => {
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             <IconButton
                               size="small"
-                              onClick={() => navigate('/dashboard')}
+                              onClick={() => {
+                                setSelectedDashboardMonitor(monitor);
+                                navigate('/dashboard');
+                              }}
                               sx={{
                                 color: '#00ff7f',
                                 '&:hover': {

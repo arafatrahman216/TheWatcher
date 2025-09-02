@@ -15,8 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 
-
-
 def _get_uptimerobot_checks() -> List[UptimeCheckResponse]:
     """eitake recent acitivity diya replace korbo"""
     monitor_data = uptime_service.uptimerobot_api._get_monitors(801132286)
@@ -109,14 +107,3 @@ def register(router):
 
   
 
-
-    @router.get("/recent-activity")
-    async def get_recent_activity(db: Session = Depends(get_db)):
-        """Get recent activity combining logs and response times"""
-        try:
-            monitor_data = uptime_service.uptimerobot_api._get_stats_activity(801275358)
-            return monitor_data
-
-        except Exception as e:
-            logger.error(f"Error getting recent activity: {e}")
-            raise HTTPException(status_code=500, detail="Internal server error")

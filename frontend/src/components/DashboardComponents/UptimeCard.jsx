@@ -11,10 +11,12 @@ export default function UptimeCard({ stats }) {
   const getUptimeColor = () => {
     if (uptimePercentage >= 99) return 'success';
     if (uptimePercentage >= 95) return 'warning';
-    return 'error';
+    return 'error';     
   };
 
   const getUptimeStatus = () => {
+    console.log(stats)
+
     if (uptimePercentage >= 99.5) return 'Excellent';
     if (uptimePercentage >= 99) return 'Great';
     if (uptimePercentage >= 95) return 'Good';

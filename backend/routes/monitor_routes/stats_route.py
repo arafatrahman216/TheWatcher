@@ -17,8 +17,10 @@ def register(router):
     @router.get("/stats")
     async def get_uptime_stats_endpoint(db: Session = Depends(get_db)):
         return await get_uptime_stats(db)
-
-
+    
+    @router.get("/recent-activity")
+    async def get_recent_activity_endpoint(monitor: str ,db: Session = Depends(get_db)):
+        return await get_uptime_stats(monitor)
 
     @router.get("/monitors")
     async def get_uptime_monitors_endpoint(db: Session = Depends(get_db)):

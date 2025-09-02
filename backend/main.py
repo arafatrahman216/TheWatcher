@@ -72,14 +72,6 @@ async def health_check():
         logger.error(f"Health check failed: {e}")
         raise HTTPException(status_code=500, detail="System unhealthy")
 
-@app.get("/api/v1/ssl-cert")
-async def get_ssl_cert():
-    """Get SSL certificate info for monitored website"""
-    cert_info = uptime_service.get_ssl_certificate_info()
-    if cert_info.get("error"):
-        raise HTTPException(status_code=502, detail=cert_info["error"])
-    return cert_info
-
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

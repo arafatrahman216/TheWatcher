@@ -31,6 +31,7 @@ function PublicRoute({ children, user }) {
 }
 
 function AppContent({ user, onLogin, onLogout }) {
+  const [selectedDashboardMonitor, setSelectedDashboardMonitor] = useState(null);
   return (
     <>
       <Routes>
@@ -50,7 +51,7 @@ function AppContent({ user, onLogin, onLogout }) {
           element={
             <ProtectedRoute user={user}>
               <Navbar user={user} onLogout={onLogout} />
-              <HomePage user={user} />
+              <HomePage user={user} setSelectedDashboardMonitor={setSelectedDashboardMonitor} />
             </ProtectedRoute>
           } 
         />
@@ -60,20 +61,11 @@ function AppContent({ user, onLogin, onLogout }) {
           element={
             <ProtectedRoute user={user}>
               <Navbar user={user} onLogout={onLogout} />
-              <Dashboard user={user} />
+              <Dashboard user={user} selectedMonitor={selectedDashboardMonitor} />
             </ProtectedRoute>
           } 
         />
         
-        <Route 
-          path="/dashboard/:monitorId" 
-          element={
-            <ProtectedRoute user={user}>
-              <Navbar user={user} onLogout={onLogout} />
-              <Dashboard user={user} />
-            </ProtectedRoute>
-          } 
-        />
         
         <Route 
           path="/create-monitor" 

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ThemeProvider, CssBaseline, Container, Typography, Box, Grid, Alert, AppBar, Toolbar, Button } from '@mui/material';
 import { API_BASE_URL } from '../api';
@@ -19,24 +19,15 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 
 
-function Dashboard({ user }) {
+function Dashboard({ user, selectedMonitor }) {
   const { monitorId } = useParams();
+  const navigate = useNavigate();
   const [website, setWebsite] = useState(null);
   const [stats, setStats] = useState(null);
   const [checks, setChecks] = useState([]);
   const [sslCert, setSSLCert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedMonitor, setSelectedMonitor] = useState(null);
-
-  // If monitorId is provided, we could fetch monitor details here
-  useEffect(() => {
-    if (monitorId) {
-      // You can add logic here to fetch monitor details by ID
-      // For now, we'll just set it as the selectedMonitor
-      setSelectedMonitor({ monitorid: monitorId });
-    }
-  }, [monitorId]);
 
   const updateStateIfChanged = (setter, newData, oldData) => {
     if (JSON.stringify(newData) !== JSON.stringify(oldData)) setter(newData);
@@ -45,8 +36,12 @@ function Dashboard({ user }) {
   const fetchData = async () => {
     try {
       setError(null);
+
       // If a specific monitor is selected, fetch data for that monitor
       const monitorParam = selectedMonitor ? `?monitor=${selectedMonitor.monitorid}` : '';
+      if (!monitorParam) {
+          navigate('/');
+      }
       var [ websiteResponse, statsResponse,sslCertResponse, checksResponse ] = await Promise.all([
         axios.get(`${API_BASE_URL}/website${monitorParam}`),
         axios.get(`${API_BASE_URL}/stats${monitorParam}`),

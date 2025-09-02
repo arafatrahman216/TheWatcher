@@ -9,10 +9,7 @@ monitor = {
 
 
 # resp = UptimeRobotAPI()._get_monitors(801275358)
-# resp1= UptimeRobotAPI()._get_stats_activity(801275358)
-
-resp1= UptimeRobotAPI()._get_monitors(801275358)
-print(resp1)
+resp1= UptimeRobotAPI()._get_stats_activity(801275358)
 
 # print(resp.get("monitors")[0].get("response_times"))
 print("---------------------")
