@@ -56,7 +56,7 @@ export default function WebsiteInfo({ website }) {
           </Box>
 
           <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-            Monitoring since {formatDate(website?.created_at)}
+            Monitoring since {formatDate(website?.monitor_created)}
           </Typography>
         </Box>
       </CardContent>

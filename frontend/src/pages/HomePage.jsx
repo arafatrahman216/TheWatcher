@@ -57,50 +57,22 @@ const HomePage = ({ user, setSelectedDashboardMonitor }) => {
   const fetchMonitors = async () => {
     try {
       setLoading(true);
-      // Replace with actual API endpoint when available
-      const response = await axios.get(`${API_BASE_URL}/monitors`);
-      setMonitors(response.data || []);
+      // // Replace with actual API endpoint when available
+      // const response = await axios.get(`${API_BASE_URL}/monitors`);
+      // setMonitors(response.data || []);
+
+      const body = {
+        user_id: user.id || 0,
+        monitor_id: 0
+      }
+
+      const resp = await axios.post(`${API_BASE_URL}/monitors`, body);
+      console.log('Monitor :', resp.data);
+      setMonitors(resp.data.monitors || []);
     } catch (err) {
       console.error('Error fetching monitors:', err);
       // Mock data for demonstration
-      setMonitors([
-        {
-          monitorid: 1,
-          sitename: 'Personal Portfolio',
-          site_url: 'https://myportfolio.com',
-          monitor_created: '2024-01-15',
-          is_active: true,
-          last_checked: '2024-08-30T10:30:00Z',
-          status: 'online'
-        },
-        {
-          monitorid: 2,
-          sitename: 'E-commerce Store',
-          site_url: 'https://mystore.com',
-          monitor_created: '2024-02-20',
-          is_active: true,
-          last_checked: '2024-08-30T10:25:00Z',
-          status: 'online'
-        },
-        {
-          monitorid: 3,
-          sitename: 'Blog Website',
-          site_url: 'https://myblog.com',
-          monitor_created: '2024-03-10',
-          is_active: false,
-          last_checked: '2024-08-29T22:15:00Z',
-          status: 'offline'
-        },
-        {
-          monitorid: 4,
-          sitename: 'API Service',
-          site_url: 'https://api.myservice.com',
-          monitor_created: '2024-04-05',
-          is_active: true,
-          last_checked: '2024-08-30T10:28:00Z',
-          status: 'warning'
-        }
-      ]);
+      setMonitors([]);
     } finally {
       setLoading(false);
     }
@@ -130,19 +102,6 @@ const HomePage = ({ user, setSelectedDashboardMonitor }) => {
       month: 'short',
       day: 'numeric'
     });
-  };
-
-    const formatLastChecked = (dateString) => {
-    if (!dateString) return 'Never';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-    return `${Math.floor(diffMins / 1440)}d ago`;
   };
 
   const handleDeleteClick = (monitor) => {

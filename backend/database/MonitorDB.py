@@ -82,4 +82,29 @@ def get_monitor_info(monitor_id):
 
 
 
-
+def get_monitor_by_user(user_id: int):
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM monitors WHERE userid = %s", (user_id,))
+        monitors = cursor.fetchall()
+        if monitors:
+            monitors = [
+                {
+                    "monitorid": monitor[0],
+                    "userid": monitor[1],
+                    "sitename": monitor[2],
+                    "site_url": monitor[3],
+                    "monitor_created": monitor[4],
+                    "is_active": monitor[5]
+                }
+                for monitor in monitors
+            ]
+            return {"success": True, "data": monitors}
+        else:
+            return {"success": False, "message": "No monitors found for user"}
+    except Exception as e:
+        return {"success": False, "message": f"Database error: {str(e)}"}
+    finally:
+        cursor.close()
+        connection.close()

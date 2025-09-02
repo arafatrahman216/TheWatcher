@@ -19,16 +19,12 @@ MAIN_URL = os.getenv("MAIN_URL")
 
 def register(router):
     @router.get("/discord")
-    async def send_discord_report(db: Session = Depends(get_db)):
+    async def send_discord_report(monitorid: str,db: Session = Depends(get_db)):
         if not DISCORD_WEBHOOK_URL:
-            raise HTTPException(status_code=400, detail="DISCORD_WEBHOOK_URL not set in .env")
+            raise HTTPException(status_code=404, detail="DISCORD_WEBHOOK_URL not set in .env")
         try:
-            # Get website info
-            website = db.query(Website).filter(Website.id == uptime_service.website_id).first()
-            print(website.url if website else None)
-            stats = None
             try:
-                stats = await get_uptime_stats(db)
+                stats = await get_uptime_stats(monitorid)
             except Exception:
                 stats = None
 
@@ -36,7 +32,7 @@ def register(router):
             ssl_status = "Unknown"
             ssl_expiry = "Unknown"
             ssl_days_remaining = "N/A"
-            ssl_info = uptime_service.get_ssl_certificate_info(MAIN_URL if website else None)
+            ssl_info = uptime_service.get_ssl_certificate_info(stats.get("url") if stats else MAIN_URL)
             print(ssl_info)
             if ssl_info:
                 ssl_expiry = ssl_info.get('valid_till') or "Unknown"
@@ -57,13 +53,11 @@ def register(router):
                 if ssl_info.get('cert_exp') is True:
                     ssl_status = "Expired"
 
-            website_name = website.name if website else "Unknown"
-            website_url = website.url if website else "Unknown"
-            uptime_percentage = stats.uptime_percentage if stats else "N/A"
-            total_checks = stats.total_checks if stats else "N/A"
-            successful_checks = stats.successful_checks if stats else "N/A"
-            avg_response = stats.average_response_time if stats else "N/A"
-            last_check = stats.last_check.strftime('%Y-%m-%d %H:%M:%S UTC') if stats and stats.last_check else "N/A"
+            website_name = stats.get("name") if stats else "Unknown"
+            website_url = stats.get("url") if stats else "Unknown"
+            uptime_percentage = stats.get("uptime_percentage", 0)
+            total_checks = stats.get("total_checks", 0)
+            avg_response = stats.get("average_response_time", 0)
 
             # Local Dhaka time
             local_tz = pytz.timezone('Asia/Dhaka')
@@ -71,27 +65,13 @@ def register(router):
             local_time = utc_now.replace(tzinfo=pytz.utc).astimezone(local_tz)
             formatted_local_time = local_time.strftime('%Y-%m-%d %I:%M:%S %p GMT+6')
 
-            last_check_local = last_check
-            if stats and stats.last_check:
-                try:
-                    if stats.last_check.tzinfo is None:
-                        utc_last_check = stats.last_check.replace(tzinfo=pytz.utc)
-                    else:
-                        utc_last_check = stats.last_check.astimezone(pytz.utc)
-                    local_last_check = utc_last_check.astimezone(local_tz)
-                    last_check_local = local_last_check.strftime('%Y-%m-%d %I:%M:%S %p GMT+6')
-                except Exception:
-                    last_check_local = last_check
-
             message = f"""
 :bar_chart: **Website Maintenance Report**
 Website: {website_name}
 URL: {website_url}
 Uptime: {uptime_percentage}%
 Total Checks: {total_checks}
-Successful Checks: {successful_checks}
 Avg Response Time: {avg_response} ms
-Last Check: {last_check_local}
 SSL Status: {ssl_status}
 SSL Expiry: {ssl_expiry}
 SSL Days Left: {ssl_days_remaining}

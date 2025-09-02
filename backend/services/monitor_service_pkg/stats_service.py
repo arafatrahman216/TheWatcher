@@ -46,7 +46,10 @@ async def get_uptime_stats(monitorid : int ,db: Session = Depends(get_db) ) -> U
                     "uptime_percentage" : uptime_ratio,
                     "total_checks" : monitor_data.get("responsetime_length") if monitor_data.get("responsetime_length") else 0,
                     "average_response_time" : monitor_data.get("average_response_time") if monitor_data.get("average_response_time") else 0,
-                    "checks" : checks
+                    "checks" : checks,
+                    "name" : monitor_data.get("friendly_name") if monitor_data.get("friendly_name") else "Unknown",
+                    "url" : monitor_data.get("url") if monitor_data.get("url") else "Unknown"
+
                 }
                 return data
             else:

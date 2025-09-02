@@ -431,3 +431,31 @@ def _find_closest_response_time(target_timestamp: int, response_times_dict: Dict
             
     return closest_time
 
+
+def filter_by_user_id(Allmonitors: List[Dict[str, Any]], userMonitors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Filter monitors by user ID"""
+    # Create a set of monitor IDs that belong to the user
+    # print(userMonitors)
+    user_monitor_ids = {monitor.get('monitorid') for monitor in userMonitors}
+    
+    # Filter all monitors to only include those belonging to the user
+    filtered_monitors = []
+    for monitor in Allmonitors:
+        print(monitor)
+        if monitor.get('id') in user_monitor_ids:
+            # Find corresponding user monitor data
+            user_monitor = next((um for um in userMonitors if um.get('monitorid') == monitor.get('id')), None)
+            
+            # Merge data, prioritizing Allmonitors data but adding user-specific fields
+            merged_monitor = monitor.copy()
+            if user_monitor:
+                merged_monitor['userid'] = user_monitor.get('userid')
+                merged_monitor['monitor_created'] = user_monitor.get('monitor_created')
+                # Keep the accurate sitename from Allmonitors as friendlyName
+                # but add user's sitename as a separate field if different
+                if user_monitor.get('sitename') != monitor.get('friendlyName'):
+                    merged_monitor['user_sitename'] = user_monitor.get('sitename')
+            
+            filtered_monitors.append(merged_monitor)
+    
+    return filtered_monitors

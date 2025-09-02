@@ -7,8 +7,8 @@ from fastapi import Depends, HTTPException, APIRouter, Request
 from sqlalchemy.orm import Session
 
 from database.AuthDB import get_db
-from database.MonitorDB import MonitorCreate, _create_new_monitor, _delete_monitor
-from services.monitor_service_pkg.api_client import UptimeRobotAPI
+from database.MonitorDB import MonitorCreate, _create_new_monitor, _delete_monitor, get_monitor_by_user
+from services.monitor_service_pkg.api_client import UptimeRobotAPI, filter_by_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,18 @@ router = APIRouter(prefix="/monitors", tags=["monitors"])
 async def get_monitor_by_id(request : DeleteRequest, db: Session = Depends(get_db)):
     try :
         user_id = request.user_id
-        print(user_id)
+        # print(user_id)
         all_monitors = UptimeRobotAPI()._get_all_monitors()
+        # print(all_monitors)
+        user_monitors = get_monitor_by_user(user_id).get("data", [])
+        filtered_monitors = filter_by_user_id(all_monitors, user_monitors)
+        # print(user_monitors.get("data", []))
+        print(filtered_monitors)
 
-        return {"message": "Monitor routes working!"}
+
+        return {
+            "monitors": filtered_monitors
+        }
     except Exception as e:
         logger.error(f"Error fetching monitor by ID: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch monitor by ID")

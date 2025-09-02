@@ -93,6 +93,7 @@ export default function App() {
     const checkAuth = async () => {
       try {
         const userData = authAPI.getCurrentUser();
+        console.log('Current user data:', userData);
         if (userData) {
           setUser(userData);
         }
