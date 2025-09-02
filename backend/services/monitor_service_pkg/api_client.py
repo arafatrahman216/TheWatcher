@@ -288,10 +288,12 @@ class UptimeRobotAPI:
                     "id": monitors.get("id"),
                     "interval": monitors.get("interval"),
                     "friendlyName": monitors.get("friendly_name"),
+                    "name": monitors.get("friendly_name"),
                     "url": monitors.get("url"),
                     "status": monitors.get("status"),
                     "is_active": (monitors.get("status") == 2),
                     "createDateTime": monitors.get("create_datetime"),
+                    "created_at": datetime.utcfromtimestamp(monitors.get("create_datetime")) if monitors.get("create_datetime") else None,
                     # "response_times": res_times,
                     "custom_uptime_ratio" : monitors.get("custom_uptime_ratio", 0),
                     

@@ -47,17 +47,19 @@ function Dashboard({ user }) {
       setError(null);
       // If a specific monitor is selected, fetch data for that monitor
       const monitorParam = selectedMonitor ? `?monitor=${selectedMonitor.monitorid}` : '';
-      var [ statsResponse, checksResponse, sslCertResponse] = await Promise.all([
+      var [ websiteResponse, statsResponse,sslCertResponse, checksResponse ] = await Promise.all([
+        axios.get(`${API_BASE_URL}/website${monitorParam}`),
         axios.get(`${API_BASE_URL}/stats${monitorParam}`),
         // axios.get(`${API_BASE_URL}/checks${monitorParam}`),
-        (axios.get(`${API_BASE_URL}/recent-activity`)),
         axios.get(`${API_BASE_URL}/ssl-cert${monitorParam}`),
+        (axios.get(`${API_BASE_URL}/recent-activity`)),
       ]);
-      var websiteResponse = checksResponse.data.monitor;
+      var Response = checksResponse.data.monitor;
       console.log(websiteResponse);
+      websiteResponse= checksResponse.data.monitor;
       checksResponse = checksResponse.data.checks;
-      console.log(checksResponse);
-      updateStateIfChanged(setWebsite, websiteResponse.data, website);
+      console.log(Response);
+      updateStateIfChanged(setWebsite, websiteResponse, website);
       updateStateIfChanged(setStats, statsResponse.data, stats);
       updateStateIfChanged(setChecks, checksResponse, checks);
       updateStateIfChanged(setSSLCert, sslCertResponse.data, sslCert);
@@ -71,7 +73,7 @@ function Dashboard({ user }) {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000);
+    const interval = setInterval(fetchData, 120000);
     return () => clearInterval(interval);
   }, [selectedMonitor]); // Re-fetch when selected monitor changes
 
