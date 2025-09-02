@@ -12,9 +12,14 @@ logger = logging.getLogger(__name__)
 
 def register(router):
     @router.get("/ssl-cert")
-    async def get_ssl_cert():
+    async def get_ssl_cert(monitorid : str ):
         """Get SSL certificate info for monitored website"""
-        cert_info = uptime_service.get_ssl_certificate_info()
+        print(monitorid)
+        monitor = get_monitor_info(monitorid).get("data")
+        domain = monitor.get("site_url") if monitor else None
+        print(domain)
+        cert_info = uptime_service.get_ssl_certificate_info(domain=domain+"/")
+        print(cert_info)
         if cert_info.get("error"):
             raise HTTPException(status_code=502, detail=cert_info["error"])
         return cert_info

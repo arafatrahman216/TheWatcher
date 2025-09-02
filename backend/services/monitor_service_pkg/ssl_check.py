@@ -14,16 +14,17 @@ class SSL_Check:
     def __init__(self):
         self.uptimerobot_api = UptimeRobotAPI()
         self.website_url = os.getenv("MONITORED_WEBSITE_URL", "https://www.fabricxai.com/")
-        self.website_name = os.getenv("MONITORED_WEBSITE_NAME", "FabricX AI")
-        self.website_id = 1  # Fixed ID for the monitored website
         
     def get_ssl_certificate_info(self, domain: str = None):
         """Fetch SSL certificate info from ssl-checker.io API"""
         import requests  # local import to mirror original dependencies
         if not domain:
             domain = self.website_url.replace('https://', '').replace('http://', '').strip('/')
+        else :
+            domain = domain.replace('https://', '').replace('http://', '').strip('/')
         try:
             url = f"https://ssl-checker.io/api/v1/check/{domain}"
+            # print(url)
             response = requests.get(url, timeout=15)
             response.raise_for_status()
             data = response.json()

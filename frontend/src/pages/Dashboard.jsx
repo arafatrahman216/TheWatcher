@@ -43,7 +43,7 @@ function Dashboard({ user, selectedMonitor }) {
         navigate('/');
       }
 
-      var websiteResponse, statsResponse, checksResponse;
+      var websiteResponse, statsResponse, sslCertResponse;
       // Fetch website data
       try {
         websiteResponse = await axios.get(`${API_BASE_URL}/website${monitorParam}`);
@@ -57,6 +57,10 @@ function Dashboard({ user, selectedMonitor }) {
         statsResponse = await axios.get(`${API_BASE_URL}/stats${monitorParam}`);
         console.log('Fetched stats data:', statsResponse.data);
         updateStateIfChanged(setStats, statsResponse.data, stats);
+        
+        const checksData = statsResponse.data.checks;
+        console.log('Fetched recent activity data:', checksData); 
+        updateStateIfChanged(setChecks, checksData, checks);
       } catch (err) {
         console.error('Error fetching stats data:', err);
       }
@@ -64,21 +68,20 @@ function Dashboard({ user, selectedMonitor }) {
       // Fetch SSL certificate data
       try {
         sslCertResponse = await axios.get(`${API_BASE_URL}/ssl-cert${monitorParam}`);
+        console.log('Fetched SSL certificate data:', sslCertResponse.data);
         updateStateIfChanged(setSSLCert, sslCertResponse.data, sslCert);
       } catch (err) {
         console.error('Error fetching SSL certificate data:', err);
-      }
+        sslCertResponse= {
+          valid_from: null,
+          valid_till: null,
+          days_left: null,
+          cert_exp: true,
+          error: err.message || 'Failed to fetch SSL certificate data'
+        }
+        updateStateIfChanged(setSSLCert, sslCertResponse, sslCert);
 
-      // Fetch recent activity data
-      try {
-        const checksData = statsResponse.data.checks;
-        console.log('Fetched recent activity data:', checksData); 
-        updateStateIfChanged(setChecks, checksData, checks);
-        checksResponse = await axios.get(`${API_BASE_URL}/recent-activity`);
-      } catch (err) {
-        console.error('Error fetching recent activity data:', err);
-      }
-
+      } 
       setLoading(false);
     } catch (err) {
       setError(err.message || 'Failed to fetch data');
@@ -111,7 +114,7 @@ function Dashboard({ user, selectedMonitor }) {
               component="h1"
               sx={{ fontWeight: 700, mb: 2, color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
             >
-              🔍 {selectedMonitor ? `${selectedMonitor.id} Dashboard` : 'Website Monitor'}
+              🔍 {selectedMonitor ? `${website.name} Dashboard` : 'Website Monitor'}
             </Typography>
             <Typography
               variant="h6"
@@ -124,9 +127,9 @@ function Dashboard({ user, selectedMonitor }) {
               }}
             >
               {selectedMonitor 
-                ? `Real-time monitoring dashboard for ${selectedMonitor.site_url}` 
+                ? `Real-time monitoring dashboard for ${website.url}` 
                 : 'Real-time monitoring dashboard for website uptime, performance, reliability — plus broken link scans'
-              }
+              } 
             </Typography>
             {error && (
               <Alert

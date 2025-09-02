@@ -22,7 +22,7 @@ export default function SSLCertCard({ cert }) {
             <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
               SSL Certificate
             </Typography>
-            {expired && <Chip label="Expired" color="error" sx={{ ml: 2, fontWeight: 700 }} />}
+            {expired && <Chip label="Attention!" color="error" sx={{ ml: 2, fontWeight: 700 }} />}
           </Box>
         }
         sx={{ pb: 1 }}
