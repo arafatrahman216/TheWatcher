@@ -35,9 +35,6 @@ class UptimeCheckResponse(BaseModel):
         }
 
 class UptimeStatsResponse(BaseModel):
-    website_id: int
-    website_url: str
-    website_name: str
     uptime_percentage: float
     total_checks: int
     successful_checks: int

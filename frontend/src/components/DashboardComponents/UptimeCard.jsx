@@ -5,7 +5,6 @@ import { CheckCircle } from '@mui/icons-material';
 export default function UptimeCard({ stats }) {
   const uptimePercentage = stats ? stats.uptime_percentage : 0;
   const totalChecks = stats ? stats.total_checks : 0;
-  const successfulChecks = stats ? stats.successful_checks : 0;
   const avgResponseTime = stats ? stats.average_response_time : 0;
 
   const getUptimeColor = () => {
@@ -48,7 +47,7 @@ export default function UptimeCard({ stats }) {
           </Typography>
           <Chip label={getUptimeStatus()} color={getUptimeColor()} sx={{ fontSize: '0.875rem', fontWeight: 600, mb: 2 }} />
           <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', mb: 3 }}>
-            {successfulChecks} successful of {totalChecks} checks
+            Total {totalChecks} checks
           </Typography>
         </Box>
 

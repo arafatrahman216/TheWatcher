@@ -68,18 +68,18 @@ class UptimeRobotAPI:
             data = {
                 "api_key": self.api_key,
                 "format": "json",
-                # "monitors": monitor_id,
+                "monitors": monitor_id,
                 "logs": "1",
                 "response_times": "1",
-                # "response_times_limit": "50",
+                # "response_times_limit": "1000",
                 "response_times_average": "1",
                 "custom_uptime_ratios": "30-7-1"
             }
-            logger.debug(f"Making request to {url}")
+            # logger.debug(f"Making request to {url}")
             response = requests.post(url, data=data, timeout=30)
             response.raise_for_status()
             result = response.json()
-            logger.debug(f"UptimeRobot response: {result}")
+            # logger.debug(f"UptimeRobot response: {result}")
             if result.get("stat") == "ok":
                 return result
             else:

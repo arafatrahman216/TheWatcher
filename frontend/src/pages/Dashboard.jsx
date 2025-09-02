@@ -38,7 +38,7 @@ function Dashboard({ user, selectedMonitor }) {
       setError(null);
 
       // If a specific monitor is selected, fetch data for that monitor
-      const monitorParam = selectedMonitor ? `?monitor=${selectedMonitor.monitorid}` : '';
+      const monitorParam = selectedMonitor ? `?monitorid=${selectedMonitor.id}` : '';
       if (!monitorParam) {
           navigate('/');
       }
