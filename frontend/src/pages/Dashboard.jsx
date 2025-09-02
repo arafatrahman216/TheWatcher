@@ -40,29 +40,52 @@ function Dashboard({ user, selectedMonitor }) {
       // If a specific monitor is selected, fetch data for that monitor
       const monitorParam = selectedMonitor ? `?monitorid=${selectedMonitor.id}` : '';
       if (!monitorParam) {
-          navigate('/');
+        navigate('/');
       }
-      var [ websiteResponse, statsResponse,sslCertResponse, checksResponse ] = await Promise.all([
-        axios.get(`${API_BASE_URL}/website${monitorParam}`),
-        axios.get(`${API_BASE_URL}/stats${monitorParam}`),
-        // axios.get(`${API_BASE_URL}/checks${monitorParam}`),
-        axios.get(`${API_BASE_URL}/ssl-cert${monitorParam}`),
-        (axios.get(`${API_BASE_URL}/recent-activity`)),
-      ]);
-      var Response = checksResponse.data.monitor;
-      console.log(websiteResponse);
-      websiteResponse= checksResponse.data.monitor;
-      checksResponse = checksResponse.data.checks;
-      console.log(Response);
-      updateStateIfChanged(setWebsite, websiteResponse, website);
-      updateStateIfChanged(setStats, statsResponse.data, stats);
-      updateStateIfChanged(setChecks, checksResponse, checks);
-      updateStateIfChanged(setSSLCert, sslCertResponse.data, sslCert);
+
+      var websiteResponse, statsResponse, checksResponse;
+      // Fetch website data
+      try {
+        websiteResponse = await axios.get(`${API_BASE_URL}/website${monitorParam}`);
+        updateStateIfChanged(setWebsite, websiteResponse.data, website);
+      } catch (err) {
+        console.error('Error fetching website data:', err);
+      }
+
+      // Fetch stats data
+      try {
+        statsResponse = await axios.get(`${API_BASE_URL}/stats${monitorParam}`);
+        console.log('Fetched stats data:', statsResponse.data);
+        updateStateIfChanged(setStats, statsResponse.data, stats);
+      } catch (err) {
+        console.error('Error fetching stats data:', err);
+      }
+
+      // Fetch SSL certificate data
+      try {
+        sslCertResponse = await axios.get(`${API_BASE_URL}/ssl-cert${monitorParam}`);
+        updateStateIfChanged(setSSLCert, sslCertResponse.data, sslCert);
+      } catch (err) {
+        console.error('Error fetching SSL certificate data:', err);
+      }
+
+      // Fetch recent activity data
+      try {
+        const checksData = statsResponse.data.checks;
+        console.log('Fetched recent activity data:', checksData); 
+        updateStateIfChanged(setChecks, checksData, checks);
+        checksResponse = await axios.get(`${API_BASE_URL}/recent-activity`);
+        const websiteData = checksResponse.data.monitor;
+        updateStateIfChanged(setWebsite, websiteData, website);
+      } catch (err) {
+        console.error('Error fetching recent activity data:', err);
+      }
+
       setLoading(false);
     } catch (err) {
       setError(err.message || 'Failed to fetch data');
       setLoading(false);
-      console.error('Error fetching data:', err);
+      console.error('Error in fetchData:', err);
     }
   };
 
@@ -90,7 +113,7 @@ function Dashboard({ user, selectedMonitor }) {
               component="h1"
               sx={{ fontWeight: 700, mb: 2, color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
             >
-              🔍 {selectedMonitor ? `${selectedMonitor.sitename} Dashboard` : 'Website Monitor'}
+              🔍 {selectedMonitor ? `${selectedMonitor.id} Dashboard` : 'Website Monitor'}
             </Typography>
             <Typography
               variant="h6"

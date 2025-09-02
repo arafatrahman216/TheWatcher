@@ -25,7 +25,7 @@ export default function RecentChecksTimeline({ checks }) {
                 Recent Activity
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                All {recentChecks.length} monitoring results
+                Latest {recentChecks.length} checks monitoring results along with logs
               </Typography>
             </Box>
           </Box>

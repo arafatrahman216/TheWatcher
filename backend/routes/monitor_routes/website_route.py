@@ -17,3 +17,5 @@ def register(router):
         if cert_info.get("error"):
             raise HTTPException(status_code=502, detail=cert_info["error"])
         return cert_info
+    
+

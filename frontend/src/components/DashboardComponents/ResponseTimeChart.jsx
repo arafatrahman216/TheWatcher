@@ -10,7 +10,7 @@ export default function ResponseTimeChart({ checks }) {
     const date = new Date(dateStr);
     return isNaN(date.getTime()) ? new Date() : date;
   };
-
+  console.log('Fetched response time data:', checks);
   const validChecks = checks
     ? checks.filter(
         (check) =>
