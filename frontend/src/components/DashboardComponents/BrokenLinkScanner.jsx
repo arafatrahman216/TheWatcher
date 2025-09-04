@@ -115,10 +115,12 @@ export default function BrokenLinkScanner({ defaultRoot }) {
               label="Start URL"
               fullWidth
               value={startUrl}
-              onChange={(e) => setStartUrl(e.target.value)}
+              // make it read-only
+              InputProps={{ readOnly: true }}
               placeholder={defaultRoot || "https://example.com"}
-              helperText="Leave blank to use the monitored website URL"
+              helperText="This is the monitored website URL"
             />
+
           </Grid>
 
           <Grid item xs={12} md={5}>
