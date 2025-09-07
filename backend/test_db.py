@@ -1,10 +1,15 @@
 import asyncio
 from services.monitor_service_pkg.stats_service import get_uptime_stats
+from services.monitor_service_pkg.api_client import UptimeRobotAPI
 
 
-async def main():
-    resp = await get_uptime_stats("801275358")
-    print(resp)
+a = UptimeRobotAPI()._get_monitors(801275358)
+print(a)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+
+# async def main():
+#     resp = await get_uptime_stats("801275358")
+#     print(resp)
+
+# if __name__ == "__main__":
+#     asyncio.run(main())

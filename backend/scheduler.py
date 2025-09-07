@@ -1,8 +1,6 @@
-# backend/scheduler.py
 import atexit
 import logging
-from datetime import datetime
-import time
+from datetime import datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -12,7 +10,6 @@ from services.monitor_service_pkg.api_client import UptimeRobotAPI
 from services.auth_mail_pkg.email_service import EmailService
 
 # ----------------- Logging -----------------
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ----------------- Services -----------------
@@ -20,7 +17,6 @@ uptime_api = UptimeRobotAPI()
 email_service = EmailService()
 
 
-# ----------------- Email function -----------------
 def send_email(to_email, site_name, site_url):
     """Send email notification that site is down using EmailService."""
     subject = f"[ALERT] Your site {site_name} is down!"
@@ -34,14 +30,12 @@ Regards,
 The Watcher Team
 """
     try:
-        # Use your existing send_mail method
         email_service.send_mail(recipient_email=to_email, subject=subject, text=body)
         logger.info(f"✅ Email sent to {to_email} for {site_name}")
     except Exception as e:
         logger.error(f"❌ Failed to send email to {to_email}: {e}")
 
 
-# ----------------- Scheduler task -----------------
 def check_down_monitors():
     """Fetch monitors from API, check DB, and notify users if DOWN."""
     logger.info(f"[{datetime.now()}] Running uptime check...")
@@ -78,39 +72,33 @@ def check_down_monitors():
         connection.close()
 
 
-# ----------------- Task Scheduler Class -----------------
 class TaskScheduler:
+    """Background scheduler for uptime checks."""
+
     def __init__(self):
         self.scheduler = BackgroundScheduler()
         self.scheduler.start()
         atexit.register(lambda: self.scheduler.shutdown())
+        logger.info("✅ BackgroundScheduler initialized")
 
-    def start(self, interval_minutes: int = 5):
+    def start(self, interval_minutes: int):
+        """Start the scheduler with given interval in minutes."""
         try:
+            # Remove previous job if exists
             try:
                 self.scheduler.remove_job("uptime_check")
-            except:
+            except Exception:
                 pass
 
+            next_run = datetime.now() + timedelta(minutes=interval_minutes)
             self.scheduler.add_job(
                 func=check_down_monitors,
                 trigger=IntervalTrigger(minutes=interval_minutes),
                 id="uptime_check",
                 name="Check website uptime",
                 replace_existing=True,
+                next_run_time=next_run
             )
-            logger.info(f"✅ Scheduler started: checking every {interval_minutes} minutes")
+            logger.info(f"✅ Scheduler started: first run at {next_run}, repeating every {interval_minutes} minutes")
         except Exception as e:
             logger.error(f"Failed to start scheduler: {e}")
-
-
-# ----------------- Run directly (for local testing) -----------------
-if __name__ == "__main__":
-    task_scheduler = TaskScheduler()
-    task_scheduler.start(interval_minutes=1)
-
-    try:
-        while True:
-            time.sleep(10)
-    except KeyboardInterrupt:
-        logger.info("Scheduler stopped manually")

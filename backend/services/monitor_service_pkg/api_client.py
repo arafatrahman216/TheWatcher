@@ -91,6 +91,62 @@ class UptimeRobotAPI:
             logger.error(f"Error fetching monitors: {e}")
             return []
 
+
+# for report
+    def get_all_monitor_stats(self) -> List[Dict[str, Any]]:
+        """
+        Get summarized info for all monitors:
+        - Latest status
+        - Average response time
+        - Custom uptime ratios
+        - Total number of logs and errors
+        """
+        try:
+            url = f"{self.base_url}/getMonitors"
+            data = {
+                "api_key": self.api_key,
+                "format": "json",
+                "logs": "1",  # Include logs to count them
+                "response_times": "0",  # skip detailed response times
+                "response_times_average": "1",
+                "custom_uptime_ratios": "30-7-1",
+            }
+            response = requests.post(url, data=data, timeout=30)
+            response.raise_for_status()
+            result = response.json()
+
+            if result.get("stat") != "ok":
+                logger.error(f"UptimeRobot API error: {result}")
+                return []
+
+            summary_list = []
+            for monitor in result.get("monitors", []):
+                logs = monitor.get("logs", [])
+                errors_count = sum(1 for log in logs if log.get("type") == 1)  # type 1 = error
+                summary_list.append({
+                    "id": monitor.get("id"),
+                    "friendlyName": monitor.get("friendly_name"),
+                    "url": monitor.get("url"),
+                    "status": monitor.get("status"),
+                    "interval": monitor.get("interval"),
+                    "average_response_time": monitor.get("average_response_time"),
+                    "custom_uptime_ratios": monitor.get("custom_uptime_ratios"),
+                    "total_logs": len(logs),
+                    "total_errors": errors_count,
+                    "last_log": logs[-1] if logs else None,
+                    "createDateTime": monitor.get("create_datetime"),
+                })
+
+            return summary_list
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error when fetching summarized monitor stats: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Unexpected error when fetching summarized monitor stats: {e}")
+            return []
+
+
     def _get_monitor_by_monitor_id(self, monitor_id: str) -> Dict[str, Any]:
         """Get a specific monitor by ID from UptimeRobot API"""
         try:
