@@ -7,6 +7,7 @@ from jinja2 import Template
 from database.AuthDB import get_db_connection
 from services.monitor_service_pkg.api_client import UptimeRobotAPI
 from services.monitor_service_pkg.performance_service import fetch_lighthouse_score
+from services.monitor_service_pkg.ssl_check import SSL_Check
 from services.linkscan_pkg.scanner import LinkScannerService
 from services.auth_mail_pkg.email_service import EmailService
 
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/report", tags=["report"])
 uptime_api = UptimeRobotAPI()
 email_service = EmailService()
 scanner = LinkScannerService()
+ssl_checker = SSL_Check()
 
 
 def build_html_report(user_email: str, reports: List[Dict[str, Any]]) -> str:
@@ -44,10 +46,19 @@ def build_html_report(user_email: str, reports: List[Dict[str, Any]]) -> str:
           <li>Custom Uptime Ratios: {{ r.get('custom_uptime_ratios', 'N/A') }}</li>
           <li>Total Logs: {{ r.get('total_logs', 0) }}</li>
           <li>Total Errors: {{ r.get('total_errors', 0) }}</li>
-          {% if r.get('last_log') %}
-          <li>Last Log: {{ r['last_log'] }}</li>
-          {% endif %}
         </ul>
+
+        <h4>SSL Certificate</h4>
+        {% if r.ssl.get('error') %}
+          <p class="error">Error: {{ r.ssl['error'] }}</p>
+        {% else %}
+          <ul>
+            <li>Valid From: {{ r.ssl.get('valid_from', 'N/A') }}</li>
+            <li>Valid Till: {{ r.ssl.get('valid_till', 'N/A') }}</li>
+            <li>Days Left: {{ r.ssl.get('days_left', 'N/A') }}</li>
+            <li>Certificate Expired: {{ r.ssl.get('cert_exp', 'N/A') }}</li>
+          </ul>
+        {% endif %}
 
         <h4>Performance (Lighthouse)</h4>
         {% if r.lighthouse.get('error') %}
@@ -69,19 +80,6 @@ def build_html_report(user_email: str, reports: List[Dict[str, Any]]) -> str:
           <p>Checked {{ r.link_scan.get('total_links_checked', 0) }} links, 
              Broken: {{ r.link_scan.get('broken_count', 0) }}, 
              OK: {{ r.link_scan.get('ok_count', 0) }}</p>
-          {% if r.link_scan.get('broken') %}
-            <table>
-              <tr><th>Source Page</th><th>Broken Link</th><th>Status</th><th>Error</th></tr>
-              {% for b in r.link_scan['broken'] %}
-                <tr>
-                  <td>{{ b.get('source_page', '') }}</td>
-                  <td>{{ b.get('link', '') }}</td>
-                  <td>{{ b.get('status_code', 'N/A') }}</td>
-                  <td>{{ b.get('error', '') }}</td>
-                </tr>
-              {% endfor %}
-            </table>
-          {% endif %}
         {% endif %}
         <hr/>
       {% endfor %}
@@ -127,8 +125,15 @@ async def get_full_report(
                     if user_row:
                         user_email = user_row[0]
 
+            # SSL Info
+            ssl_data = ssl_checker.get_ssl_certificate_info(site_url)
+
             # Lighthouse
-            lighthouse_data = await fetch_lighthouse_score(site_url, strategy="mobile")
+            try:
+                lighthouse_data = await fetch_lighthouse_score(site_url, strategy="mobile")
+            except Exception as e:
+                logger.error(f"Lighthouse failed for {site_url}: {e}")
+                lighthouse_data = {"error": str(e)}
 
             # Link Scan
             try:
@@ -139,7 +144,8 @@ async def get_full_report(
 
             # Merge all data
             report = {
-                **monitor,  # include uptime stats
+                **monitor,  # uptime stats
+                "ssl": ssl_data,
                 "lighthouse": lighthouse_data,
                 "link_scan": link_scan_data,
             }

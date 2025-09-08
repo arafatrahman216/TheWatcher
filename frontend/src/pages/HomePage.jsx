@@ -39,6 +39,8 @@ import {
 import { API_BASE_URL, apiHelpers } from '../api';
 import axios from 'axios';
 import DeleteMonitorModal from '../components/HomeComponent/DeleteMonitorModal';
+import EditMonitorModal from '../components/HomeComponent/EditMonitorModal';
+
 
 const HomePage = ({ user, setSelectedDashboardMonitor }) => {
   const navigate = useNavigate();
@@ -47,8 +49,12 @@ const HomePage = ({ user, setSelectedDashboardMonitor }) => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedMonitor, setSelectedMonitor] = useState(null);
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editMonitor, setEditMonitor] = useState(null);
 
   useEffect(() => {
     fetchMonitors();
@@ -109,6 +115,12 @@ const HomePage = ({ user, setSelectedDashboardMonitor }) => {
     setDeleteModalOpen(true);
     console.log('Delete clicked for monitor:', monitor);
   };
+
+  const handleEditClick = (monitor) => {
+    setEditMonitor(monitor);
+    setEditModalOpen(true);
+  };
+
 
   const handleDeleteConfirm = async (monitorId, userId) => {
     try {
@@ -475,8 +487,19 @@ const HomePage = ({ user, setSelectedDashboardMonitor }) => {
                               }}
                             >
                               <Visibility fontSize="small" />
-                            </IconButton>
-                            <IconButton
+                                </IconButton>
+                          <IconButton
+                          size="small"
+                          sx={{ color: '#ffaa00', '&:hover': { backgroundColor: 'rgba(255, 170, 0, 0.1)' } }}
+                          onClick={() => {
+                            setEditMonitor(monitor);
+                            setEditModalOpen(true);
+                          }}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+
+                            {/* <IconButton
                               size="small"
                               sx={{
                                 color: '#ffaa00',
@@ -486,7 +509,7 @@ const HomePage = ({ user, setSelectedDashboardMonitor }) => {
                               }}
                             >
                               <Edit fontSize="small" />
-                            </IconButton>
+                            </IconButton> */}
                             <IconButton
                               size="small"
                               onClick={() => handleDeleteClick(monitor)}
@@ -554,6 +577,19 @@ const HomePage = ({ user, setSelectedDashboardMonitor }) => {
       >
         <Add />
       </Fab>
+      {/* EDIT MONITOR MODAL */}
+      {editMonitor && (
+        <EditMonitorModal
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          monitor={editMonitor}
+          user={user}
+          onEdit={fetchMonitors} // Refresh monitors after edit
+        />
+      )}
+
+
+
 
       {/* Delete Monitor Modal */}
       <DeleteMonitorModal

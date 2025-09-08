@@ -92,7 +92,6 @@ class UptimeRobotAPI:
             return []
 
 
-# for report
     def get_all_monitor_stats(self) -> List[Dict[str, Any]]:
         """
         Get summarized info for all monitors:
@@ -107,8 +106,8 @@ class UptimeRobotAPI:
                 "api_key": self.api_key,
                 "format": "json",
                 "logs": "1",  # Include logs to count them
-                "response_times": "0",  # skip detailed response times
-                "response_times_average": "1",
+                "response_times": "1",  # ✅ include response times
+                "response_times_average": "180",  # ✅ average over last 180 mins (3 hours)
                 "custom_uptime_ratios": "30-7-1",
             }
             response = requests.post(url, data=data, timeout=30)
@@ -129,11 +128,11 @@ class UptimeRobotAPI:
                     "url": monitor.get("url"),
                     "status": monitor.get("status"),
                     "interval": monitor.get("interval"),
-                    "average_response_time": monitor.get("average_response_time"),
+                    "average_response_time": monitor.get("average_response_time") or "N/A",  # ✅ fallback
                     "custom_uptime_ratios": monitor.get("custom_uptime_ratios"),
                     "total_logs": len(logs),
                     "total_errors": errors_count,
-                    "last_log": logs[-1] if logs else None,
+                    # don't include raw last_log if you don't want it in reports
                     "createDateTime": monitor.get("create_datetime"),
                 })
 
@@ -237,7 +236,30 @@ class UptimeRobotAPI:
             return {}
         
 
-        
+    def edit_monitor(self, monitor_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Edit an existing monitor using UptimeRobot v3 PATCH API.
+        Example usage:
+            api.edit_monitor("123456", {"friendlyName": "New Name", "url": "https://example.com"})
+        """
+        try:
+            url = f"{self.updates_url}/monitors/{monitor_id}"
+            response = requests.patch(url, headers=self.headers, json=updates, timeout=30)
+            response.raise_for_status()
+
+            data = response.json() if response.text.strip() else {}
+            return {
+                "success": True,
+                "message": "Monitor updated successfully",
+                "data": data
+            }
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error updating monitor {monitor_id}: {e}")
+            return {"success": False, "message": str(e)}
+        except Exception as e:
+            logger.error(f"Unexpected error updating monitor {monitor_id}: {e}")
+            return {"success": False, "message": str(e)}
+    
 
 def _process_uptimerobot_log(log: Dict[str, Any], response_times_dict: Dict[int, float]) -> Optional[UptimeCheckResponse]:
     """Process a single UptimeRobot log entry"""
