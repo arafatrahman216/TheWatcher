@@ -1,5 +1,8 @@
 // Central place for API config and authentication functions
-export const API_BASE_URL =  'http://localhost:8000/api/v1';
+
+require('dotenv').config();
+
+export const API_BASE_URL =  "" + process.env.server_api
 
 export const authAPI = {
   // User signup

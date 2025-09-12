@@ -23,6 +23,7 @@ import {
   Email,
   Lock,
 } from '@mui/icons-material';
+import { API_BASE_URL } from '../../api';
 
 const DeleteMonitorModal = ({ 
   open, 
@@ -38,6 +39,7 @@ const DeleteMonitorModal = ({
   const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1: verification, 2: confirmation
 
+
   const handleVerification = async () => {
     if (!email || !password) {
       setError('Please enter both email and password');
@@ -52,7 +54,7 @@ const DeleteMonitorModal = ({
     setLoading(true);
     try {
       // Verify credentials by attempting login
-      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
