@@ -1,8 +1,15 @@
 // Central place for API config and authentication functions
 
-require('dotenv').config();
 
-export const API_BASE_URL =  "" + process.env.server_api
+const SERVER_API = process.env.REACT_APP_SERVER_API;
+
+if (!SERVER_API) {
+  console.error("SERVER_API is undefined! Did you restart the dev server?");
+}
+
+export const API_BASE_URL =  "" + SERVER_API ;
+
+console.log("API Base URL:", API_BASE_URL);
 
 export const authAPI = {
   // User signup
