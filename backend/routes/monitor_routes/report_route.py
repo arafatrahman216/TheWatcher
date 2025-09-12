@@ -1,3 +1,5 @@
+import asyncio
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query
 import logging
 from typing import List, Dict, Optional, Any
@@ -10,6 +12,9 @@ from services.monitor_service_pkg.performance_service import fetch_lighthouse_sc
 from services.monitor_service_pkg.ssl_check import SSL_Check
 from services.linkscan_pkg.scanner import LinkScannerService
 from services.auth_mail_pkg.email_service import EmailService
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from fastapi import BackgroundTasks
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/report", tags=["report"])
@@ -174,7 +179,106 @@ async def get_full_report(
     except Exception as e:
         logger.error(f"Error in report generation: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch detailed report")
+    
+
+
+
+@router.get("/send") 
+async def trigger_report_sending(background_tasks: BackgroundTasks):
+    """Endpoint to manually trigger report sending."""
+    try:
+        print("before get report")
+        background_tasks.add_task(get_report)  # runs after response is sent
+        logger.info("✅ Immediate report sending job scheduled")
+        print("after get report")
+        return {"status": "success", "detail": "Report sending triggered."}
+    except Exception as e:
+        logger.error(f"Failed to trigger report sending: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to trigger report sending: {e}")
+
 
 
 def register(main_router):
     main_router.include_router(router)
+
+
+
+
+async def get_report(max_pages=15):
+  try:
+      # Fetch all monitors with uptime stats
+      all_monitors_summary = uptime_api.get_all_monitor_stats()
+
+      connection = get_db_connection()
+      cursor = connection.cursor()
+      user_reports: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+      urls = []
+
+      monitor_targets = (
+          all_monitors_summary
+      )
+
+      for monitor in monitor_targets:
+          print("monitor:", monitor)
+          monitor_id = monitor.get("id")
+          site_url = monitor.get("url")
+          site_name = monitor.get("friendlyName", site_url)
+
+          # User email
+          user_email = "admin@example.com"
+          if monitor_id:
+              cursor.execute("SELECT userid FROM monitors WHERE monitorid = %s", (monitor_id,))
+              row = cursor.fetchone()
+              if row:
+                  user_id = row[0]
+                  cursor.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+                  user_row = cursor.fetchone()
+                  if user_row:
+                      user_email = user_row[0]
+
+          # SSL Info
+          ssl_data = ssl_checker.get_ssl_certificate_info(site_url)
+
+          # Lighthouse
+          try:
+              lighthouse_data = await fetch_lighthouse_score(site_url, strategy="mobile")
+          except Exception as e:
+              logger.error(f"Lighthouse failed for {site_url}: {e}")
+              lighthouse_data = {"error": str(e)}
+
+          # Link Scan
+          try:
+              link_scan_data = scanner.scan(site_url, max_pages=max_pages)
+          except Exception as e:
+              logger.error(f"Link scan failed for {site_url}: {e}")
+              link_scan_data = {"error": str(e)}
+
+          # Merge all data
+          report = {
+              **monitor,  # uptime stats
+              "ssl": ssl_data,
+              "lighthouse": lighthouse_data,
+              "link_scan": link_scan_data,
+          }
+
+          user_reports[user_email].append(report)
+
+      # Send email per user
+      for user_email, reports in user_reports.items():
+          try:
+              html_body = build_html_report(user_email, reports)
+              email_service.send_mail(
+                  recipient_email=user_email,
+                  subject="📊 Your Website Monitoring Report",
+                  html=html_body,
+                  text="Please view this report in an HTML-compatible client."
+              )
+              logger.info(f"📧 Report sent to {user_email}")
+          except Exception as e:
+              logger.error(f"❌ Failed to send report to {user_email}: {e}")
+
+      cursor.close()
+      connection.close()
+  except Exception as e:
+      logger.error(f"Error in report generation: {e}")
+      
