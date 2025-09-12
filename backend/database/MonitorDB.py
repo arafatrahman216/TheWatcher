@@ -16,16 +16,20 @@ def _create_new_monitor(monitor: Dict[str, any]):
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
+        print("before insert:", monitor)
         cursor.execute(
             """INSERT INTO monitors (monitorid, userid, sitename, site_url, monitor_created, interval)
                VALUES (%s, %s, %s, %s, %s, %s) RETURNING monitorid""",
             (monitor["monitorid"], monitor["userid"], monitor["sitename"], monitor["site_url"],
              monitor["monitor_created"], monitor["interval"])
         )
+
         result = cursor.fetchone()
+        print("after insert:", result)
         if result:
             monitor_id = result[0]
             connection.commit()
+            print("after commit:", monitor_id)
             return {"success": True, "message": "Monitor created successfully", "monitor_id": monitor_id}
         else:
             return {"success": False, "message": "Failed to create monitor"}
