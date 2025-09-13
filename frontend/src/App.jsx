@@ -1,158 +1,143 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { ThemeProvider, CssBaseline, Container, Typography, Box, Grid, Alert } from '@mui/material';
-import theme from './theme';
-import { API_BASE_URL } from './api';
-
-import UptimeCard from './components/UptimeCard';
-import ResponseTimeChart from './components/ResponseTimeChart';
-import RecentChecksTimeline from './components/RecentChecksTimeline';
-import WebsiteInfo from './components/WebsiteInfo';
-import SSLCertCard from './components/SSLCertCard';
-import BrokenLinkScanner from './components/BrokenLinkScanner';
-import PerformanceCard from './components/PerformanceCard';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
+import theme from './theme';
+import { authAPI } from './api';
 
-function Dashboard() {
-  const [website, setWebsite] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [checks, setChecks] = useState([]);
-  const [sslCert, setSSLCert] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// Pages
+import AuthPage from './pages/AuthPage';
+import HomePage from './pages/HomePage';
+import Dashboard from './pages/Dashboard';
+import CreateMonitorPage from './pages/CreateMonitorPage';
 
-  const updateStateIfChanged = (setter, newData, oldData) => {
-    if (JSON.stringify(newData) !== JSON.stringify(oldData)) setter(newData);
-  };
+// Components
+import Navbar from './components/HomeComponent/Navbar';
 
-  const fetchData = async () => {
-    try {
-      setError(null);
-      const [websiteResponse, statsResponse, checksResponse, sslCertResponse] = await Promise.all([
-        axios.get(`${API_BASE_URL}/website`),
-        axios.get(`${API_BASE_URL}/stats`),
-        axios.get(`${API_BASE_URL}/checks`),
-        axios.get(`${API_BASE_URL}/ssl-cert`),
-      ]);
-      updateStateIfChanged(setWebsite, websiteResponse.data, website);
-      updateStateIfChanged(setStats, statsResponse.data, stats);
-      updateStateIfChanged(setChecks, checksResponse.data, checks);
-      updateStateIfChanged(setSSLCert, sslCertResponse.data, sslCert);
-      setLoading(false);
-    } catch (err) {
-      setError(err.message || 'Failed to fetch data');
-      setLoading(false);
-      console.error('Error fetching data:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
+// Protected Route Component
+function ProtectedRoute({ children, user }) {
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
+  return children;
+}
 
+// Public Route Component (redirect to home if already logged in)
+function PublicRoute({ children, user }) {
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
+function AppContent({ user, onLogin, onLogout }) {
+  const [selectedDashboardMonitor, setSelectedDashboardMonitor] = useState(null);
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', py: 4 }}>
-      <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-        <Box sx={{ mb: 6, textAlign: 'center' }}>
-          <Typography
-            variant="h1"
-            component="h1"
-            sx={{ fontWeight: 700, mb: 2, color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
-          >
-            🔍 Website Monitor
-          </Typography>
-          <Typography
-            variant="h6"
-            sx={{
-              mb: 3,
-              fontWeight: 400,
-              color: 'rgba(255,255,255,0.9)',
-              maxWidth: 600,
-              margin: '0 auto 24px auto',
-            }}
-          >
-            Real-time monitoring dashboard for website uptime, performance, reliability — plus broken link scans
-          </Typography>
-          {error && (
-            <Alert
-              severity="error"
-              sx={{
-                mt: 2,
-                borderRadius: 3,
-                maxWidth: 600,
-                margin: '16px auto 0 auto',
-                backgroundColor: 'rgba(255,255,255,0.95)',
-                '& .MuiAlert-icon': { color: '#d32f2f' },
-              }}
-            >
-              {error}
-            </Alert>
-          )}
-        </Box>
-
-        <Box
-          sx={{
-            backgroundColor: 'rgba(255,255,255,0.95)',
-            borderRadius: 4,
-            p: 4,
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          }}
-        >
-          <Grid container spacing={4}>
-            {/* Top row (3) */}
-            <Grid item xs={12} md={4} lg={4}>
-              <WebsiteInfo website={website} />
-            </Grid>
-            <Grid item xs={12} md={4} lg={4}>
-              <SSLCertCard cert={sslCert} />
-            </Grid>
-            <Grid item xs={12} md={4} lg={4}>
-              <UptimeCard stats={stats} />
-            </Grid>
-
-            {/* Middle row (2) */}
-            <Grid item xs={12} md={6} lg={6}>
-              <RecentChecksTimeline checks={checks} />
-            </Grid>
-            <Grid item xs={12} md={6} lg={6}>
-              <ResponseTimeChart checks={checks} />
-            </Grid>
-
-            {/* Fourth row: Performance metrics */}
-            <Grid item xs={12} md={6} lg={6}>
-              <PerformanceCard url={website?.url} strategy="mobile" />
-            </Grid>
-            <Grid item xs={12} md={6} lg={6}>
-              <PerformanceCard url={website?.url} strategy="desktop" />
-            </Grid>
-
-            {/* Fifth row: Broken Link Scanner (full width) */}
-            <Grid item xs={12}>
-              <BrokenLinkScanner defaultRoot={website?.url || ""} />
-            </Grid>
-          </Grid>
-        </Box>
-      </Container>
-    </Box>
+    <>
+      <Routes>
+        {/* Public Routes */}
+        <Route 
+          path="/login" 
+          element={
+            <PublicRoute user={user}>
+              <AuthPage onLogin={onLogin} />
+            </PublicRoute>
+          } 
+        />
+        
+        {/* Protected Routes */}
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute user={user}>
+              <Navbar user={user} onLogout={onLogout} />
+              <HomePage user={user} setSelectedDashboardMonitor={setSelectedDashboardMonitor} />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute user={user}>
+              <Navbar user={user} onLogout={onLogout} />
+              <Dashboard user={user} selectedMonitor={selectedDashboardMonitor} />
+            </ProtectedRoute>
+          } 
+        />
+        
+        
+        <Route 
+          path="/create-monitor" 
+          element={
+            <ProtectedRoute user={user}>
+              <Navbar user={user} onLogout={onLogout} />
+              <CreateMonitorPage user={user} />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Redirect any unknown routes */}
+        <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
+      </Routes>
+    </>
   );
 }
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is logged in on app start
+    const checkAuth = async () => {
+      try {
+        const userData = authAPI.getCurrentUser();
+        console.log('Current user data:', userData);
+        if (userData) {
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        authAPI.logout(); // Clear invalid session
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    authAPI.logout();
+    setUser(null);
+  };
+
+  if (loading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+          <CircularProgress />
+        </Box>
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Dashboard />
+      <Router>
+        <AppContent 
+          user={user} 
+          onLogin={handleLogin} 
+          onLogout={handleLogout} 
+        />
+      </Router>
     </ThemeProvider>
   );
 }

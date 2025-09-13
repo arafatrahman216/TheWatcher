@@ -1,36 +1,130 @@
-.
-├── backend
-│   ├── database.py
-│   ├── main.py
-│   ├── requirements.txt
-│   ├── routes
-│   │   ├── __init__.py
-│   │   ├── uptime.py
-│   │   └── uptime_routes
-│   ├── run_backend.sh
-│   ├── scheduler.py
-│   ├── schemas.py
-│   ├── services
-│   │   ├── __init__.py
-│   │   ├── uptime_service_pkg
-│   │   └── uptime_service.py
-│   ├── setup.sh
-│   └── watcher.db
-├── check.txt
-├── frontend
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── public
-│   │   └── index.html
-│   └── src
-│       ├── api.js
-│       ├── App.jsx
-│       ├── components
-│       ├── index.js
-│       └── theme.js
-├── project_structure.txt
-├── README.md
-├── run_backend.sh
-└── setup.sh
+# The Watcher - Project Structure
 
-10 directories, 24 files
+## Root Directory
+```
+The_Watcher/
+├── .gitignore
+├── README.md
+├── project_structure.txt
+└── SUPABASE_SETUP.md
+```
+
+## Backend (FastAPI + PostgreSQL)
+```
+backend/
+├── .env                              # Environment variables
+├── .env.example                      # Environment template
+├── main.py                           # FastAPI application entry point
+├── requirements.txt                  # Python dependencies
+├── run_backend.sh                    # Backend startup script
+├── scheduler.py                      # Background task scheduler
+├── setup.sh                          # Backend setup script
+├── watcher.db                        # SQLite database (fallback)
+├── venv/                             # Python virtual environment
+│
+├── database/                         # Database layer
+│   ├── database.py                   # PostgreSQL connection & auth functions
+│   ├── schema.sql                    # Database schema (users, monitors tables)
+│   └── schemas.py                    # Pydantic models
+│
+├── routes/                           # API endpoints
+│   ├── __init__.py
+│   ├── uptime.py                     # General uptime routes
+│   ├── auth_routes/
+│   │   └── auth_routes.py            # Authentication endpoints (/signup, /login, /verify-email)
+│   ├── linkscan_routes/
+│   │   └── scan_route.py             # Link scanning endpoints
+│   └── monitor_routes/
+│       ├── check_route.py            # Website monitoring checks
+│       ├── discord_route.py          # Discord webhook integration
+│       ├── performance_route.py      # Performance monitoring
+│       ├── stats_route.py            # Statistics endpoints
+│       └── website_route.py          # Website management
+│
+└── services/                         # Business logic layer
+    ├── __init__.py
+    ├── uptime_service.py             # Uptime monitoring service
+    ├── auth_mail_pkg/
+    │   ├── auth_service.py           # Authentication business logic
+    │   └── email_service.py          # Email service (OTP, notifications)
+    ├── linkscan_pkg/
+    │   └── scanner.py                # Link scanning implementation
+    └── monitor_service_pkg/
+        ├── __init__.py
+        ├── api_client.py             # External API client
+        ├── performance_service.py    # Performance monitoring logic
+        └── service_impl.py           # Monitor service implementation
+```
+
+## Frontend (React + Material-UI)
+```
+frontend/
+├── package.json                      # Node.js dependencies
+├── package-lock.json                 # Dependency lock file
+├── public/
+│   └── index.html                    # HTML template
+│
+└── src/
+    ├── index.js                      # React application entry point
+    ├── App.jsx                       # Main application component
+    ├── api.js                        # API client configuration
+    ├── theme.js                      # Material-UI theme configuration
+    │
+    ├── components/                   # Reusable UI components
+    │   ├── AuthComponent/
+    │   │   └── EmailVerification.jsx # Email verification UI
+    │   ├── DashboardComponents/
+    │   │   ├── BrokenLinkScanner.jsx # Link scanning interface
+    │   │   ├── PerformanceCard.jsx   # Performance metrics display
+    │   │   ├── RecentChecksTimeline.jsx # Recent monitoring checks
+    │   │   ├── ResponseTimeChart.jsx # Response time visualization
+    │   │   ├── SSLCertCard.jsx       # SSL certificate information
+    │   │   ├── UptimeCard.jsx        # Uptime statistics
+    │   │   └── WebsiteInfo.jsx       # Website information panel
+    │   └── HomeComponent/
+    │       └── Navbar.jsx            # Navigation bar
+    │
+    └── pages/
+        └── Dashboard.jsx             # Main dashboard page
+```
+
+## Key Technologies & Features
+
+### Backend Stack:
+- **Framework**: FastAPI (Python)
+- **Database**: PostgreSQL with psycopg2 driver
+- **Authentication**: Custom JWT-like system with OTP email verification
+- **Background Tasks**: APScheduler for periodic monitoring
+- **API Documentation**: Automatic OpenAPI/Swagger docs
+
+### Frontend Stack:
+- **Framework**: React 18
+- **UI Library**: Material-UI (MUI)
+- **State Management**: React hooks (useState, useEffect)
+- **HTTP Client**: Fetch API
+- **Build Tool**: Create React App
+
+### Database Schema:
+- **users table**: id, name, email, passhash, email_verified, verification_otp, otp_expiry
+- **monitors table**: monitorid, userid, sitename, site_url, monitor_created, is_active, last_checked, status
+
+### API Endpoints:
+- **Authentication**: `/api/v1/auth/signup`, `/api/v1/auth/login`, `/api/v1/auth/verify-email`
+- **Monitoring**: Website uptime, performance metrics, SSL certificate tracking
+- **Integrations**: Discord webhooks for notifications
+- **Scanning**: Broken link detection and reporting
+
+### Key Features:
+1. **User Authentication**: Signup/login with email verification
+2. **Website Monitoring**: Continuous uptime and performance tracking
+3. **Real-time Notifications**: Discord integration for alerts
+4. **SSL Certificate Monitoring**: Track certificate expiration
+5. **Link Scanning**: Detect broken links on monitored websites
+6. **Performance Analytics**: Response time charts and statistics
+7. **Dashboard Interface**: Clean Material-UI dashboard for monitoring
+
+### Development Setup:
+1. **Backend**: Python virtual environment with PostgreSQL
+2. **Frontend**: Node.js with npm for package management
+3. **Environment**: `.env` files for configuration
+4. **Scripts**: Automated setup and run scripts included

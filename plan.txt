@@ -1,0 +1,3 @@
+user -> new monitor Create -> first verify user using login, then use uptime api then save in supabase
+for delete monitor -> first verify by login, then take monitor id and then fetch from supabase, if userid and monitorid 
+matches with uptimerobot api monitorid then delete using api.
