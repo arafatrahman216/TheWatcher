@@ -61,6 +61,13 @@ class EmailService:
         except Exception as e:
             print(f"❌ Error sending email: {e}")
             return False
+        
+    def send_otp_email(self, recipient_email: str, otp: str, expire: int) -> bool:
+        """Send an OTP email."""
+        subject = "Your The Watcher OTP Code"
+        html_content = self.get_otp_template(otp, expire)
+        return self.send_mail(recipient_email, subject, html=html_content)
+    
 
     def get_otp_template(self, otp: str, expire: int) -> str:
         """Return an HTML OTP template."""
@@ -78,3 +85,5 @@ class EmailService:
         </body>
         </html>
         """
+
+    
